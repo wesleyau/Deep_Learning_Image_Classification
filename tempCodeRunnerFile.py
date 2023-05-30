@@ -40,7 +40,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
             elif 'Am_image' in file_name:
                 iterations = 1  # Set a different number of iterations for Other_image
             elif 'Elin_image' in file_name:
-                iterations = 7  # Set a different number of iterations for Other_image
+                iterations = 6  # Set a different number of iterations for Other_image
             elif 'Eres_image' in file_name:
                 iterations = 6  # Set a different number of iterations for Other_image
             elif 'TC_image' in file_name:
