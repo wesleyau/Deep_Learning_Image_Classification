@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
-
+ 
 # Specify the main directory path containing the subdirectories with .npy files
 main_directory = '/data/wesley/NPZ_Folder1'
 
