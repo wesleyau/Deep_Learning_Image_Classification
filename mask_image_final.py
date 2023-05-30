@@ -29,7 +29,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
             else:
                 padded_image_array = image_array
             
-            # Brandon's code
+            # setting mask to nans, 1, and 0
             mask = np.isnan(padded_image_array) | (padded_image_array == 1) | (padded_image_array == 0)
             masked_image = np.where(mask, np.nan, padded_image_array)  # Apply the mask to the image
             
@@ -49,7 +49,6 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
             dilated_mask = binary_dilation(mask, iterations=iterations, structure=structuring_element)  # Dilate the mask with the specified number of iterations and structuring element
             inverted_mask = np.logical_not(dilated_mask)  # Invert the mask
             masked_image = np.where(inverted_mask, masked_image, np.nan)  # Apply the inverted mask to the image
-            # End Brandon's code
             
             # Find the non-zero indices in the array
             non_zero_indices = np.nonzero(np.any(masked_image != 0, axis=-1))
