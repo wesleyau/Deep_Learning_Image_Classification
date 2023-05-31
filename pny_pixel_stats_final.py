@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-def collect_statistics(folder_path):
+def collect_statistics(folder_path, min_intensity_threshold=0.001):
     file_list = os.listdir(folder_path)
     folder_stats = []
 
@@ -13,9 +13,12 @@ def collect_statistics(folder_path):
         elif file_name.endswith('.npy'):
             data = np.load(file_path)
 
-            # Skip 0, 1, and NaN values
-            data = data[(data != 0) & (data != 1) & (~np.isnan(data))]
+            # Skip 0, 1, NaN, and values close to zero
+            data = data[(data != 0) & (data != 1) & (~np.isnan(data)) & (np.abs(data) > 1e-6)]
 
+            # Flatten the array
+            data = data.flatten()
+            
             if data.size > 0:
                 # Calculate summary statistics and quantile ranges for pixel intensities
                 stats = {

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-def load_and_flatten_data(folder_path):
+def load_and_flatten_data(folder_path, min_intensity_threshold=0.001):
     file_list = os.listdir(folder_path)
     data_list = []
 
@@ -14,7 +14,7 @@ def load_and_flatten_data(folder_path):
             flattened_data = data.flatten()  # Flatten the 2D data into a 1D array
 
             # Exclude 0, 1, and NaN values
-            flattened_data = flattened_data[(flattened_data != 0) & (flattened_data != 1) & (~np.isnan(flattened_data))]
+            flattened_data = flattened_data[(flattened_data != 0) & (flattened_data != 1) & (~np.isnan(flattened_data)) & (flattened_data > min_intensity_threshold)]
 
             if flattened_data.size > 0:
                 data_list.append(flattened_data)
