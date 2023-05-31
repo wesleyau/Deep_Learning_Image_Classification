@@ -89,21 +89,14 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 cropped_png_directory = os.path.join(save_directory, 'masked_png_' + image_class)
                 os.makedirs(cropped_png_directory, exist_ok=True)
     
-                # Save the modified .npy file in the respective directory with a modified filename
-                modified_npy_file_name = f"masked_{file_name}"
-                modified_npy_file_path = os.path.join(modified_npy_directory, modified_npy_file_name)
-                np.save(modified_npy_file_path, cropped_image_array)
-    
-                # Create a Matplotlib figure and axis
-                fig, ax = plt.subplots()
-    
                 # Determine vmin and vmax based on filename
+                vmin, vmax = None, None
                 if 'Co_image' in file_name:
                     vmin, vmax = 116, 123
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59, 64
                 elif 'Elin_image' in file_name:
-                    vmin, vmax = 1.88, 2.05 #this may need to be fiddled with, this image is most variable between the tx and ty  machines
+                    vmin, vmax = 1.88, 2.05  # this may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
                     vmin, vmax = 0.09, 0.11
                 elif 'TC_image' in file_name:
@@ -111,9 +104,19 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 else:
                     print(file_name + " does not contain any substring in the filename")  # Default values if no specific word is found
                 
+                # Save the modified .npy file in the respective directory with a modified filename
+                modified_npy_file_name = f"masked_{file_name}"
+                modified_npy_file_path = os.path.join(modified_npy_directory, modified_npy_file_name)
+                
+                # Save the pixel values within the specified vmin and vmax ranges
+                np.save(modified_npy_file_path, np.clip(cropped_image_array, vmin, vmax))
+    
+                # Create a Matplotlib figure and axis
+                fig, ax = plt.subplots()
+    
                 # Display the image without axis and white space
                 ax.imshow(cropped_image_array, vmin=vmin, vmax=vmax)
-    
+
                 # Turn off axis and white space
                 ax.axis('off')
                 ax.autoscale(tight=True)

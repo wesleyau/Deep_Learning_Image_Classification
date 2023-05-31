@@ -15,16 +15,21 @@ import glob
 path_to_files = "/data/wesley/"  
 dir_list = os.listdir(path_to_files)
 print(dir_list)
+print(os.getcwd())
 
-npz = np.load('TX202302140854_TX202302140945.npz')
+npz = np.load('../TX202302140854_TX202302140945.npz')
 print(npz.files)
 print(npz['TC_image'].shape)
 
 plt.imshow(npz['TC_image'])
 
 
-image = plt.imshow(npz['masked_TX202301181108_TX202301181231_Co_image'],  vmin=116, vmax = 123)
-print(npz['masked_TX202301181108_TX202301181231_Co_image'])
+image = plt.imshow(npz['masked_TX202201040933_TX202201041024_Am_image'], vmin = 59, vmax =64)
+# Turn off axis and white space
+plt.axis('off')
+plt.autoscale(tight=True)
+
+print(npz['masked_TX202201040933_TX202201041024_Am_image'])
 print(np.isnan(npz['masked_TX202301181108_TX202301181231_Co_image']))
 
 
