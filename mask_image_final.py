@@ -100,7 +100,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59, 64
                 elif 'Elin_image' in file_name:
-                    vmin, vmax = 1.88, 2.05 #this may need to be fiddled with
+                    vmin, vmax = 1.88, 2.05 #this may need to be fiddled with, this image is most variable between the tx and ty  machines
                 elif 'Eres_image' in file_name:
                     vmin, vmax = 0.09, 0.11
                 elif 'TC_image' in file_name:
