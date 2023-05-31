@@ -89,7 +89,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Save the modified .npy file in the respective directory with a modified filename
                 modified_npy_file_name = f"masked_{file_name}"
                 modified_npy_file_path = os.path.join(modified_npy_directory, modified_npy_file_name)
-                np.save(modified_npy_file_path, cropped_image_array)
+                np.save(modified_npy_file_path, cropped_image_array.astype(np.float64))
     
                 # Create a Matplotlib figure and axis
                 fig, ax = plt.subplots()
