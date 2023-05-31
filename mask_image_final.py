@@ -38,13 +38,13 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
             if 'Co_image' in file_name:
                 iterations = 1  # Set a different number of iterations for Elin_image
             elif 'Am_image' in file_name:
-                iterations = 1  # Set a different number of iterations for Other_image
+                iterations = 1  # Set a different number of iterations for Am_image
             elif 'Elin_image' in file_name:
-                iterations = 7  # Set a different number of iterations for Other_image
+                iterations = 7  # Set a different number of iterations for Elin_image
             elif 'Eres_image' in file_name:
-                iterations = 6  # Set a different number of iterations for Other_image
+                iterations = 6  # Set a different number of iterations for Eres_image
             elif 'TC_image' in file_name:
-                iterations = 3  # Set a different number of iterations for Other_image
+                iterations = 3  # Set a different number of iterations for TC_image
                 
             dilated_mask = binary_dilation(mask, iterations=iterations, structure=structuring_element)  # Dilate the mask with the specified number of iterations and structuring element
             inverted_mask = np.logical_not(dilated_mask)  # Invert the mask
