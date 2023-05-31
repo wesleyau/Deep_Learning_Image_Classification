@@ -68,8 +68,8 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder):
     print('Statistics saved to', output_file)
 
 # Provide the main directory paths
-tx_directory = '/data/wesley/NPZ_Folder1/TX_Machine'  # TX machine directory
-ty_directory = '/data/wesley/NPZ_Folder1/TY_Machine'  # TY machine directory
+tx_directory = '/data/wesley/NPZ_Folder/TX_Machine'  # TX machine directory
+ty_directory = '/data/wesley/NPZ_Folder/TY_Machine'  # TY machine directory
 output_folder = 'statistics'  # Folder to save the statistics files
 
 # Create the output folder within the TX directory
