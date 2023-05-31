@@ -23,7 +23,7 @@ def load_and_flatten_data(folder_path):
 
 # Provide the paths to your folders
 tx_directory = '/data/wesley/NPZ_Folder/TX_Machine/Am_image'  # Compare any image class from both the TX and TY machines, raw or masked or already
-ty_directory = '/data/wesley/NPZ_Folder/TY_Machine/Am_image'  # generally they should be the same image classes though
+ty_directory = '/data/wesley/NPZ_Folder/TY_Machine/Am_image'  # must by .npy fiels and generally they should be the same image classes for comparison reasons
 
 # Extract the image type from the filenames in the directory
 tx_file_list = os.listdir(tx_directory)
