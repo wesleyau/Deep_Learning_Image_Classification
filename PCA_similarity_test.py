@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-def load_and_flatten_data(folder_path, min_intensity_threshold=0.001):
+def load_and_flatten_data(folder_path, vmin, vmax):
     file_list = os.listdir(folder_path)
     data_list = []
 
@@ -13,8 +13,8 @@ def load_and_flatten_data(folder_path, min_intensity_threshold=0.001):
             data = np.load(file_path)
             flattened_data = data.flatten()  # Flatten the 2D data into a 1D array
 
-            # Exclude 0, 1, and NaN values
-            flattened_data = flattened_data[(flattened_data != 0) & (flattened_data != 1) & (~np.isnan(flattened_data)) & (flattened_data > min_intensity_threshold)]
+            # Exclude 0, 1, NaN, and values outside the specified range
+            flattened_data = flattened_data[(flattened_data != 0) & (flattened_data != 1) & (~np.isnan(flattened_data)) & (flattened_data >= vmin) & (flattened_data <= vmax)]
 
             if flattened_data.size > 0:
                 data_list.append(flattened_data)
@@ -22,29 +22,50 @@ def load_and_flatten_data(folder_path, min_intensity_threshold=0.001):
     return data_list
 
 # Provide the paths to your folders
-tx_directory = '/data/wesley/NPZ_Folder/TX_Machine/Co_image'  # Compare any image class from both the TX and TY machines, raw or masked or already
-ty_directory = '/data/wesley/NPZ_Folder/TY_Machine/Co_image'  # must by .npy files and generally they should be the same image classes for comparison reasons
+tx_directory = '/data/wesley/NPZ_Folder/TX_Machine/Eres_image/masked_npy_Eres'  # Compare any image class from both the TX and TY machines, raw or masked or already
+ty_directory = '/data/wesley/NPZ_Folder/TY_Machine/Eres_image/masked_npy_Eres'  # must be .npy files and generally they should be the same image classes for comparison reasons
 
 # Extract the image type from the filenames in the directory
 tx_file_list = os.listdir(tx_directory)
 ty_file_list = os.listdir(ty_directory)
 
 image_type = None
+vmin, vmax = None, None
 
 for file_name in tx_file_list:
     if any(tag in file_name for tag in ["Am", "Co", "Eres", "Elin", "TC"]):
         image_type = next((tag for tag in ["Am", "Co", "Eres", "Elin", "TC"] if tag in file_name), None)
+        if 'Co_image' in file_name:
+            vmin, vmax = 116, 123
+        elif 'Am_image' in file_name:
+            vmin, vmax = 59, 64
+        elif 'Elin_image' in file_name:
+            vmin, vmax = 1.9, 2
+        elif 'Eres_image' in file_name:
+            vmin, vmax = 0.09, 0.11
+        elif 'TC_image' in file_name:
+            vmin, vmax = 0.98, 1.02
         break
 
 if image_type is None:
     for file_name in ty_file_list:
         if any(tag in file_name for tag in ["Am", "Co", "Eres", "Elin", "TC"]):
             image_type = next((tag for tag in ["Am", "Co", "Eres", "Elin", "TC"] if tag in file_name), None)
+            if 'Co_image' in file_name:
+                vmin, vmax = 116, 123
+            elif 'Am_image' in file_name:
+                vmin, vmax = 59, 64
+            elif 'Elin_image' in file_name:
+                vmin, vmax = 1.9, 2
+            elif 'Eres_image' in file_name:
+                vmin, vmax = 0.09, 0.11
+            elif 'TC_image' in file_name:
+                vmin, vmax = 0.98, 1.02
             break
 
 # Load and flatten the datasets
-tx_data = load_and_flatten_data(tx_directory)
-ty_data = load_and_flatten_data(ty_directory)
+tx_data = load_and_flatten_data(tx_directory, vmin, vmax)
+ty_data = load_and_flatten_data(ty_directory, vmin, vmax)
 
 # Determine the minimum length among the arrays in the combined data
 min_length = min(min(len(data) for data in tx_data), min(len(data) for data in ty_data))
