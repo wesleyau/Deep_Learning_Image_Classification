@@ -8,4 +8,6 @@
 
 5. Run mask_image_final.py on the main directory of the split image classes to mask images and standardize them for input into deep learning model
 
-6. 
+6. run PCA_vim_vmax.py and K-S test.py on both raw and masked .npy files to see if they can be combined (probably not though)
+
+7 
