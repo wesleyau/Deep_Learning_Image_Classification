@@ -16,8 +16,8 @@ def collect_statistics(folder_path):
             # Flatten the data array
             data = data.flatten()
 
-            # Skip 0, 1, NaN, and values close to zero
-            data = data[(data != 0) & (data != 1) & (~np.isnan(data)) & (np.abs(data) > 1e-6)]
+            # Skip 0, 1, NaN, and infinite values
+            data = data[(data != 0) & (data != 1) & (~np.isnan(data)) & (~np.isinf(data))]
 
             if data.size > 0:
                 # Calculate summary statistics and quantile ranges for pixel intensities
