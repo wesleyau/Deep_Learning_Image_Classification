@@ -2,11 +2,18 @@ import os
 import shutil
 import numpy as np
 
+# This code iterates over npz folders and moves them in folders of their own class
+# first you need to move all npz folders into their own directory 
+# then move all the TX and TY data into seperate folders
+# I used unix to do all of the above
+# run this on each of the TX and TY folders
+# I usually use unix to move the npz folders into their own directory outside of the tx and ty folders
+
 # Define the source directory containing the .npz folders
-source_directory = "/data/wesley/NPZ_Folder/TY_Machine"
+source_directory = "/data/wesley/data2/npz_folder/TX_Machine"
 
 # Define the destination directory where the .npy files will be moved
-destination_directory = "/data/wesley/NPZ_Folder/TY_Machine"
+destination_directory = "/data/wesley/data2/npz_folder/TX_Machine"
 
 # Iterate over the .npz folders in the source directory
 for npz_folder in os.listdir(source_directory):

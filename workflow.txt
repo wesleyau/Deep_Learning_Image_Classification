@@ -1,0 +1,11 @@
+1. Move .npz archives that contain 5 .npy to own folder
+
+2. Seperate the TX and TY Machines, put them in their own folder
+
+3. Run split_npy_by_class-5-24-23.py for each of the TX and TY Machines
+
+4. Run pny_pixel_stats_hot_fix_0and1_values.py for each of the 5 classes for both machines to see what you should normalize the pixel intensities to.
+
+5. Run mask_image_final.py on the main directory of the split image classes to mask images and standardize them for input into deep learning model
+
+6. 
