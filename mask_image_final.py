@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/NPZ_Folder'
+main_directory = '/data/wesley/data2'
 
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -21,6 +21,9 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
         if file_name.endswith('.npy'):
             file_path = os.path.join(dirpath, file_name)
             image_array = np.load(file_path)
+            
+            #printing names of each file just in case some of the files are corrupt and need to ask for rerun
+            print(file_name)
             
             # Check if the image is Eres_image or Elin_image
             if 'Eres_image' in file_name or 'Elin_image' in file_name:
