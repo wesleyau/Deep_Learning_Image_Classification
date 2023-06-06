@@ -8,7 +8,7 @@ from PIL import Image
 import os
 
 # Define the path to the main directory containing the pass, fail, and unlabeled folders
-main_directory = '/path/to/main/directory'
+main_directory = '/data/wesley/data2/dataset_tx'
 
 # Define the transform to be applied to the input images
 image_transform = transforms.Compose([
