@@ -4,10 +4,10 @@ import shutil
 import math
 
 # Set the source directory containing the crystals
-source_directory = '/data/wesley/data2/dataset_tx_test'
+source_directory = '/data/wesley/data2/dataset_ty_test'
 
 # Set the destination directory for train, val, and unlabeled crystals
-destination_directory = '/data/wesley/data2/test_dataset_tx'
+destination_directory = '/data/wesley/data2/dataset_ty'
 
 # Set the desired percentages for train and val
 train_percentage = 0.8
