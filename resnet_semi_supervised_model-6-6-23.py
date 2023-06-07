@@ -4,7 +4,6 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import resnet50
-from torchvision.models.resnet import ResNet50_Weights
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
@@ -17,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define the transform to be applied to the input images
 image_transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize the image to the input size expected by ResNet (224x224)
+    transforms.Resize((256, 256)),  # Resize the image to the input size expected by ResNet (224x224)
     transforms.ToTensor(),  # Convert the image to a tensor
     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))  # Normalize the image
 ])
@@ -29,11 +28,9 @@ class CrystalDataset(Dataset):
         self.transform = transform
         self.file_list = []
         
-        # Iterate over the pass, fail, and unlabeled directories
         for label in ['pass', 'fail', 'unlabeled']:
             label_directory = os.path.join(directory, label)
             if os.path.exists(label_directory):
-                # Iterate over the crystal directories in the pass, fail, or unlabeled directory
                 for crystal_dir in os.listdir(label_directory):
                     crystal_dir_path = os.path.join(label_directory, crystal_dir)
                     if os.path.isdir(crystal_dir_path):
@@ -44,17 +41,22 @@ class CrystalDataset(Dataset):
 
     def __getitem__(self, index):
         crystal_dir_path, label = self.file_list[index]
-        file_name = os.listdir(crystal_dir_path)[0]  # select the first image
+        file_name = os.listdir(crystal_dir_path)[0]
         file_path = os.path.join(crystal_dir_path, file_name)
         image = Image.open(file_path).convert('RGB')
+        
         if self.transform is not None:
             image = self.transform(image)
+        
         return image, label
 
 # Create the ResNet model
 model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
 num_features = model.fc.in_features
 model.fc = nn.Linear(num_features, 2)  # Two output classes: pass, fail
+
+# Modify the input size of the conv1 layer
+model.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
 # Load the model to the device
 model = model.to(device)
@@ -83,26 +85,23 @@ for epoch in range(num_epochs):
     running_loss = 0.0
     correct = 0
     total = 0
-
+    
     # First pass: Train on labeled data and generate pseudo-labels for unlabeled data
     for images, labels in train_loader:
         images = images.to(device)
         labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
-        mask = (labels != 2)
-        mask = mask.to(device)
-        labeled_images = images[mask]
-        labeled_labels = labels[mask]
-
+        
         optimizer.zero_grad()
 
         # Forward pass and backpropagation on labeled data
-        outputs = model(labeled_images)
-        loss = criterion(outputs, labeled_labels)
+        outputs = model(images)
+        loss = criterion(outputs, labels)
         loss.backward()
-
+        
         # Pseudo-labeling for unlabeled data
-        unlabeled_images = images[~mask]
-        if unlabeled_images.size(0) > 0:
+        unlabeled_mask = (labels == 2)
+        if unlabeled_mask.any():
+            unlabeled_images = images[unlabeled_mask]
             unlabeled_outputs = model(unlabeled_images)
             _, pseudo_labels = torch.max(unlabeled_outputs.data, 1)
 
@@ -112,49 +111,10 @@ for epoch in range(num_epochs):
 
         optimizer.step()
 
-        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
+        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_mask.any() else 0
         _, predicted = torch.max(outputs.data, 1)
-        total += labeled_labels.size(0)
-        correct += (predicted == labeled_labels).sum().item()
-
-    train_loss = running_loss / len(train_loader)
-    train_accuracy = correct / total
-
-    # Second pass: Train on labeled data and pseudo-labeled data
-    pseudo_labels = torch.tensor(pseudo_labels, dtype=torch.long).to(device)
-
-    for images, labels in train_loader:
-        images = images.to(device)
-        labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
-        mask = (labels != 2)
-        mask = mask.to(device)
-        labeled_images = images[mask]
-        labeled_labels = labels[mask]
-        unlabeled_images = images[~mask]
-
-        optimizer.zero_grad()
-
-        # Training on labeled data
-        outputs = model(labeled_images)
-        loss = criterion(outputs, labeled_labels)
-        loss.backward()
-
-        _, predicted = torch.max(outputs.data, 1)
-        correct += (predicted == labeled_labels).sum().item()
-
-        # Training on pseudo-labeled data
-        if unlabeled_images.size(0) > 0:
-            outputs_unlabeled = model(unlabeled_images)
-            loss_unlabeled = criterion(outputs_unlabeled, pseudo_labels)
-            loss_unlabeled.backward()
-
-            _, predicted_unlabeled = torch.max(outputs_unlabeled.data, 1)
-            correct += (predicted_unlabeled == pseudo_labels).sum().item()
-
-        optimizer.step()
-
-        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
-        total += labeled_labels.size(0) + pseudo_labels.size(0) if unlabeled_images.size(0) > 0 else 0
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
 
     train_loss = running_loss / len(train_loader)
     train_accuracy = correct / total
@@ -163,21 +123,21 @@ for epoch in range(num_epochs):
     for images, labels in train_loader:
         images = images.to(device)
         labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
-        mask = (labels != 2)
-        mask = mask.to(device)
-        labeled_images = images[mask]
-        labeled_labels = labels[mask]
-        unlabeled_images = images[~mask]
-
+        
         optimizer.zero_grad()
 
         # Training on labeled data
-        outputs = model(labeled_images)
-        loss = criterion(outputs, labeled_labels)
+        outputs = model(images)
+        loss = criterion(outputs, labels)
         loss.backward()
+
+        _, predicted = torch.max(outputs.data, 1)
+        correct += (predicted == labels).sum().item()
 
         # Pseudo-labeling for unlabeled data
-        if unlabeled_images.size(0) > 0:
+        unlabeled_mask = (labels == 2)
+        if unlabeled_mask.any():
+            unlabeled_images = images[unlabeled_mask]
             unlabeled_outputs = model(unlabeled_images)
             _, pseudo_labels = torch.max(unlabeled_outputs.data, 1)
 
@@ -185,11 +145,16 @@ for epoch in range(num_epochs):
             loss_unlabeled = criterion(unlabeled_outputs, pseudo_labels)
             loss_unlabeled.backward()
 
-        optimizer.step()
+            optimizer.step()
 
-        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
-        total += labeled_labels.size(0)
-        correct += (predicted == labeled_labels).sum().item()
+            running_loss += loss.item() + loss_unlabeled.item()
+            total += labels.size(0) + pseudo_labels.size(0)
+
+            # Calculate the predictions for the pseudo-labeled data
+            _, predicted_unlabeled = torch.max(unlabeled_outputs.data, 1)
+
+            # Update the correct count
+            correct += (predicted_unlabeled == pseudo_labels).sum().item()
 
     train_loss = running_loss / len(train_loader)
     train_accuracy = correct / total
@@ -203,8 +168,8 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for images, labels in val_loader:
             images = images.to(device)
-            mask = torch.tensor([label != 2 for label in label_tensor]).to(device)
-
+            labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
+            
             outputs = model(images)
             loss = criterion(outputs, labels)
 

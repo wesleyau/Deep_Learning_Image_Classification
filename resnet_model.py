@@ -104,6 +104,21 @@ for epoch in range(num_epochs):
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
+        # Pseudo-labeling for unlabeled data
+        mask_unlabeled = labels == 2
+        unlabeled_images = images[mask_unlabeled]
+        if unlabeled_images.size(0) > 0:
+            unlabeled_outputs = model(unlabeled_images)
+            _, pseudo_labels = torch.max(unlabeled_outputs.data, 1)
+
+            # Repeat pseudo_labels to match the size of unlabeled_images
+            num_repeats = int(unlabeled_images.size(0) / batch_size)
+            pseudo_labels = pseudo_labels.repeat(num_repeats)
+
+            # Calculate the number of correct pseudo-labels
+            correct_pseudo = (predicted[mask_unlabeled][:pseudo_labels.size(0)] == pseudo_labels).sum().item()
+            correct += correct_pseudo
+
     train_loss = running_loss / len(train_loader)
     train_accuracy = correct / total
 
@@ -135,3 +150,4 @@ for epoch in range(num_epochs):
 
 # Save the trained model
 torch.save(model.state_dict(), 'resnet_model.pth')
+
