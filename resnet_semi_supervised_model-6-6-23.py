@@ -4,6 +4,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import resnet50
+from torchvision.models.resnet import ResNet50_Weights
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
