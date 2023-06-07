@@ -54,10 +54,7 @@ class CrystalDataset(Dataset):
 # Create the ResNet model
 model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
 num_features = model.fc.in_features
-model.fc = nn.Linear(num_features, 3)  # Three output classes: pass, fail, and unlabeled
-
-# Set device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.fc = nn.Linear(num_features, 2)  # Two output classes: pass, fail
 
 # Load the model to the device
 model = model.to(device)
@@ -82,27 +79,117 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
 # Training loop
 for epoch in range(num_epochs):
-    # Training phase
     model.train()
     running_loss = 0.0
     correct = 0
     total = 0
 
+    # First pass: Train on labeled data and generate pseudo-labels for unlabeled data
     for images, labels in train_loader:
         images = images.to(device)
         labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
+        mask = (labels != 2)
+        mask = mask.to(device)
+        labeled_images = images[mask]
+        labeled_labels = labels[mask]
 
         optimizer.zero_grad()
 
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        # Forward pass and backpropagation on labeled data
+        outputs = model(labeled_images)
+        loss = criterion(outputs, labeled_labels)
         loss.backward()
+
+        # Pseudo-labeling for unlabeled data
+        unlabeled_images = images[~mask]
+        if unlabeled_images.size(0) > 0:
+            unlabeled_outputs = model(unlabeled_images)
+            _, pseudo_labels = torch.max(unlabeled_outputs.data, 1)
+
+            # Additional forward pass and backpropagation on unlabeled data using pseudo-labels
+            loss_unlabeled = criterion(unlabeled_outputs, pseudo_labels)
+            loss_unlabeled.backward()
+
         optimizer.step()
 
-        running_loss += loss.item()
+        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
         _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        total += labeled_labels.size(0)
+        correct += (predicted == labeled_labels).sum().item()
+
+    train_loss = running_loss / len(train_loader)
+    train_accuracy = correct / total
+
+    # Second pass: Train on labeled data and pseudo-labeled data
+    pseudo_labels = torch.tensor(pseudo_labels, dtype=torch.long).to(device)
+
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
+        mask = (labels != 2)
+        mask = mask.to(device)
+        labeled_images = images[mask]
+        labeled_labels = labels[mask]
+        unlabeled_images = images[~mask]
+
+        optimizer.zero_grad()
+
+        # Training on labeled data
+        outputs = model(labeled_images)
+        loss = criterion(outputs, labeled_labels)
+        loss.backward()
+
+        _, predicted = torch.max(outputs.data, 1)
+        correct += (predicted == labeled_labels).sum().item()
+
+        # Training on pseudo-labeled data
+        if unlabeled_images.size(0) > 0:
+            outputs_unlabeled = model(unlabeled_images)
+            loss_unlabeled = criterion(outputs_unlabeled, pseudo_labels)
+            loss_unlabeled.backward()
+
+            _, predicted_unlabeled = torch.max(outputs_unlabeled.data, 1)
+            correct += (predicted_unlabeled == pseudo_labels).sum().item()
+
+        optimizer.step()
+
+        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
+        total += labeled_labels.size(0) + pseudo_labels.size(0) if unlabeled_images.size(0) > 0 else 0
+
+    train_loss = running_loss / len(train_loader)
+    train_accuracy = correct / total
+
+    # Second pass: Train on labeled data and pseudo-labeled data
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
+        mask = (labels != 2)
+        mask = mask.to(device)
+        labeled_images = images[mask]
+        labeled_labels = labels[mask]
+        unlabeled_images = images[~mask]
+
+        optimizer.zero_grad()
+
+        # Training on labeled data
+        outputs = model(labeled_images)
+        loss = criterion(outputs, labeled_labels)
+        loss.backward()
+
+        # Pseudo-labeling for unlabeled data
+        if unlabeled_images.size(0) > 0:
+            unlabeled_outputs = model(unlabeled_images)
+            _, pseudo_labels = torch.max(unlabeled_outputs.data, 1)
+
+            # Training on pseudo-labeled data
+            loss_unlabeled = criterion(unlabeled_outputs, pseudo_labels)
+            loss_unlabeled.backward()
+
+        optimizer.step()
+
+        running_loss += loss.item() + loss_unlabeled.item() if unlabeled_images.size(0) > 0 else 0
+        total += labeled_labels.size(0)
+        correct += (predicted == labeled_labels).sum().item()
 
     train_loss = running_loss / len(train_loader)
     train_accuracy = correct / total
@@ -116,7 +203,7 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for images, labels in val_loader:
             images = images.to(device)
-            labels = torch.tensor([0 if label == 'pass' else 1 if label == 'fail' else 2 for label in labels], dtype=torch.long).to(device)
+            mask = torch.tensor([label != 2 for label in label_tensor]).to(device)
 
             outputs = model(images)
             loss = criterion(outputs, labels)
