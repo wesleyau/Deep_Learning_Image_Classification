@@ -17,7 +17,7 @@ def collect_statistics(folder_path):
             data = data.flatten()
 
             # Skip 0, 1, NaN, and infinite values
-            data = data[(data != 0) & (data != 1) & (~np.isnan(data)) & (~np.isinf(data))]
+            data = data[(data != 0) & (data != 1) & (~np.isnan(data)) & (~np.isinf(data)) & (data != 255)]
 
             if data.size > 0:
                 # Calculate summary statistics and quantile ranges for pixel intensities
@@ -90,8 +90,8 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
     print('Statistics saved to', output_file)
 
 # Provide the main directory paths
-tx_directory = '/data/wesley/data2/TX_Machine'  # TX machine directory
-ty_directory = '/data/wesley/data2/TY_Machine'  # TY machine directory
+tx_directory = '/data/wesley/data2_black_background/TX_Machine'  # TX machine directory
+ty_directory = '/data/wesley/data2_black_background/TY_Machine'  # TY machine directory
 output_folder = 'statistics'  # Folder to save the statistics files
 
 # Create the output folder within the TX directory
