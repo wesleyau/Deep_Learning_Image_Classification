@@ -5,6 +5,8 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import resnet50
 from torchvision.models.resnet import ResNet50_Weights
+from torchvision.models.resnet import resnet50, ResNet, Bottleneck
+from torchvision.models._utils import IntermediateLayerGetter
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
@@ -19,10 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 image_transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor(),
-    # these are just the ImageNet mean and SD values. 
-    # I will need to calculate the eman and SD of the pixel values across all images in my dataset and change this
-    #The values (0.485, 0.456, 0.406) represent the mean values for the red, green, and blue channels, respectively. Similarly, (0.229, 0.224, 0.225) represent the standard deviation values.
-    transforms.Normalize((0.485, 0.456, 0.406, 0), (0.229, 0.224, 0.225, 1))
+    transforms.Normalize(mean=[0.485], std=[0.229])
 ])
 
 class CrystalDataset(Dataset):
@@ -45,16 +44,11 @@ class CrystalDataset(Dataset):
 
     def __getitem__(self, idx):
         image_paths, label = self.samples[idx]
-        # sort the image paths so that the channels are always in the same order
         image_paths.sort()
 
-        # Load the 4 images and concatenate them to create a 4-channel image
+        # Load the 4 images and process them individually
         images = [Image.open(p) for p in image_paths]
-        image_tensor = torch.stack([self.transform(img) for img in images])
-
-        # Merge the 4 images into a single 4-channel image
-        image_tensor = image_tensor.permute(1, 0, 2, 3)
-        image_tensor = image_tensor.view(1, 3, 256, 256)
+        image_tensors = torch.stack([self.transform(img) for img in images])
 
         if label == 'pass':
             label = 0
@@ -62,13 +56,27 @@ class CrystalDataset(Dataset):
             label = 1
         else:  # unlabeled
             label = 'unlabeled'
-        return image_tensor, label
-    
-# Create the ResNet model
-model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
-model.conv1 = nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)  # changed here
-num_features = model.fc.in_features
-model.fc = nn.Linear(num_features, 2)
+        return image_tensors, label
+
+class MultiStreamResNet(nn.Module):
+    def __init__(self, num_streams=4):
+        super(MultiStreamResNet, self).__init__()
+        self.streams = nn.ModuleList([resnet50(weights=ResNet50_Weights.IMAGENET1K_V1) for _ in range(num_streams)])
+
+        # Change the first convolution layer in each stream to take 1-channel input
+        for stream in self.streams:
+            stream.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            
+        self.fc = nn.Linear(1000 * num_streams, 2)
+
+    def forward(self, x):
+        outputs = [stream(x[:, i:i+1, :, :]) for i, stream in enumerate(self.streams)]
+        outputs = torch.cat(outputs, dim=1)
+        outputs = self.fc(outputs)
+        return outputs
+
+# Create the model
+model = MultiStreamResNet(num_streams=4)
 model = model.to(device)
 
 # Define the loss function and optimizer
@@ -89,44 +97,44 @@ val_directory = os.path.join(main_directory, 'val')
 val_dataset = CrystalDataset(val_directory, transform=image_transform)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-# Lists to hold the losses and accuracies for each epoch
-train_losses, train_accuracies = [], []
-val_losses, val_accuracies = [], []
+# Lists to store training history
+train_loss_history = []
+train_acc_history = []
+val_loss_history = []
+val_acc_history = []
 
 # Training loop
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
+    running_labeled_loss = 0.0
     correct = 0
     total = 0
 
-    # Loop over the training data
     for images, labels in train_loader:
         # Select only the labeled data
         mask_labeled = (labels != 'unlabeled')
-        images_labeled = images[mask_labeled]
-        labels_labeled = torch.tensor([0 if label == 'pass' else 1 for label in labels[mask_labeled]], dtype=torch.long).to(device)
+        images_labeled = images[mask_labeled].to(device)
+        labels_labeled = torch.tensor([label.item() for label in labels[mask_labeled]], dtype=torch.long).to(device)
 
+        # Train on the labeled data
         optimizer.zero_grad()
         outputs = model(images_labeled)
         loss = criterion(outputs, labels_labeled)
         loss.backward()
         optimizer.step()
-        
 
-        # calculate statistics only for labeled data
-        _, predicted = torch.max(outputs_labeled.data, 1)
+        # Calculate accuracy
+        _, predicted = torch.max(outputs.data, 1)
         total += labels_labeled.size(0)
         correct += (predicted == labels_labeled).sum().item()
 
         running_loss += loss.item() * images_labeled.size(0)
+        running_labeled_loss += loss.item() * images_labeled.size(0)
 
         # Pseudo-labeling for unlabeled data
-        # This contains a confidence threshold to decide when to use pseudo-labels
-        # its implemented by taking the maximum probability from the softmax ouput and checking if it's above a certain threshold
-        # if it is, the pseudo-label is used for training, otherwise, its ignored
         mask_unlabeled = (labels == 'unlabeled')
-        confidence_threshold = 0.95  # or any other value you find appropriate of how confident you want ot be in pseudolabeling
+        confidence_threshold = 0.95
         if mask_unlabeled.sum() > 0:
             images_unlabeled = images[mask_unlabeled].to(device)
             outputs_unlabeled = model(images_unlabeled)
@@ -134,65 +142,63 @@ for epoch in range(num_epochs):
             max_probs, pseudo_labels = torch.max(probabilities_unlabeled.data, 1)
             confident_indices = max_probs > confidence_threshold
             if confident_indices.sum() > 0:
-                print("Pseudo-label used")
                 loss_unlabeled = criterion(outputs_unlabeled[confident_indices], pseudo_labels[confident_indices])
                 loss_unlabeled.backward()
+                optimizer.step()
+                running_loss += loss_unlabeled.item() * confident_indices.sum()
             else:
                 print("Pseudo-label skipped")
 
-    train_loss = running_loss / len(train_loader)
-    train_accuracy = correct / total
+    train_loss = running_loss / total
+    train_labeled_loss = running_labeled_loss / total
+    train_acc = correct / total
+    train_loss_history.append(train_loss)
+    train_acc_history.append(train_acc)
+    print(f"Epoch {epoch + 1}/{num_epochs} - Training Loss: {train_loss:.4f} - Training Loss (labeled): {train_labeled_loss:.4f} - Training Accuracy: {train_acc:.4f}")
 
+    # Validation loop
     model.eval()
-    val_loss = 0.0
-    correct = 0
-    total = 0
-
-    # Loop over the validation data
+    running_val_loss = 0.0
+    correct_val = 0
+    total_val = 0
     with torch.no_grad():
-        for images, labels in val_loader:
-            images = images.to(device)
-            labels = labels.to(device)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            val_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+        for images_val, labels_val in val_loader:
+            images_val = images_val.to(device)
+            labels_val = labels_val.to(device)
+            outputs_val = model(images_val)
+            loss_val = criterion(outputs_val, labels_val)
 
-    val_loss /= len(val_loader)
-    val_accuracy = correct / total
+            # Calculate accuracy
+            _, predicted_val = torch.max(outputs_val.data, 1)
+            total_val += labels_val.size(0)
+            correct_val += (predicted_val == labels_val).sum().item()
+            running_val_loss += loss_val.item() * images_val.size(0)
 
-    print(f"Epoch {epoch + 1}/{num_epochs} - Train Loss: {train_loss:.4f} - Train Accuracy: {train_accuracy:.4f} - "
-          f"Val Loss: {val_loss:.4f} - Val Accuracy: {val_accuracy:.4f}")
+    val_loss = running_val_loss / total_val
+    val_acc = correct_val / total_val
+    val_loss_history.append(val_loss)
+    val_acc_history.append(val_acc)
+    print(f"Validation Loss: {val_loss:.4f} - Validation Accuracy: {val_acc:.4f}")
 
-    train_losses.append(train_loss)
-    train_accuracies.append(train_accuracy)
-    val_losses.append(val_loss)
-    val_accuracies.append(val_accuracy)
-
-# Save model
+# Save the model
 torch.save(model.state_dict(), 'resnet_model.pth')
 
-# Plot loss and accuracy for training and validation
-epochs = np.arange(num_epochs) + 1
-
+# Plot training and validation loss
 plt.figure(figsize=(10, 5))
-
-plt.subplot(1, 2, 1)
-plt.plot(epochs, train_losses, 'bo-', label='Training Loss')
-plt.plot(epochs, val_losses, 'ro-', label='Validation Loss')
-plt.title('Training and Validation Loss')
+plt.plot(train_loss_history, label='Training Loss')
+plt.plot(val_loss_history, label='Validation Loss')
+plt.title('Training and Validation Losses over Time')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
+plt.show()
 
-plt.subplot(1, 2, 2)
-plt.plot(epochs, train_accuracies, 'bo-', label='Training Accuracy')
-plt.plot(epochs, val_accuracies, 'ro-', label='Validation Accuracy')
-plt.title('Training and Validation Accuracy')
+# Plot training and validation accuracy
+plt.figure(figsize=(10, 5))
+plt.plot(train_acc_history, label='Training Accuracy')
+plt.plot(val_acc_history, label='Validation Accuracy')
+plt.title('Training and Validation Accuracy over Time')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
-
 plt.show()
