@@ -21,6 +21,7 @@ image_transform = transforms.Compose([
     transforms.ToTensor(),
     # these are just the ImageNet mean and SD values. 
     # I will need to calculate the eman and SD of the pixel values across all images in my dataset and change this
+    #The values (0.485, 0.456, 0.406) represent the mean values for the red, green, and blue channels, respectively. Similarly, (0.229, 0.224, 0.225) represent the standard deviation values.
     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
 ])
 
