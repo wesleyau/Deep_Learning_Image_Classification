@@ -90,7 +90,7 @@ model = MultiStreamResNet(num_streams=4)
 
 # Check if multiple GPUs are available and wrap the model using DataParallel
 if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    print("Using", torch.cuda.device_count(), "GPUs")
     model = nn.DataParallel(model)
 
 # Now move the model to the device
