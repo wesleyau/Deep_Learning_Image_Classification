@@ -48,15 +48,19 @@ class CrystalDataset(Dataset):
 
         # Load the 4 images and process them individually
         images = [Image.open(p) for p in image_paths]
-        image_tensors = torch.stack([self.transform(img) for img in images])
+
+        # Convert images to tensors and concatenate along channel dimension
+        image_tensor = torch.cat([self.transform(img) for img in images], dim=1)
 
         if label == 'pass':
             label = 0
         elif label == 'fail':
             label = 1
         else:  # unlabeled
-            label = 'unlabeled'
-        return image_tensors, label
+            label = 2  # use a specific integer for 'unlabeled'
+            
+        return image_tensor, label
+
 
 class MultiStreamResNet(nn.Module):
     def __init__(self, num_streams=4):
@@ -70,10 +74,16 @@ class MultiStreamResNet(nn.Module):
         self.fc = nn.Linear(1000 * num_streams, 2)
 
     def forward(self, x):
+        # x shape: (batch_size, num_streams, height, width)
         outputs = [stream(x[:, i:i+1, :, :]) for i, stream in enumerate(self.streams)]
+            
+        # Concatenate the outputs and pass through the final linear layer
         outputs = torch.cat(outputs, dim=1)
         outputs = self.fc(outputs)
+            
         return outputs
+
+
 
 # Create the model
 model = MultiStreamResNet(num_streams=4)
@@ -112,10 +122,16 @@ for epoch in range(num_epochs):
     total = 0
 
     for images, labels in train_loader:
-        # Select only the labeled data
-        mask_labeled = (labels != 'unlabeled')
+        # Convert the labels to a tensor if they are not
+        if type(labels) is list:
+            labels = torch.Tensor(labels)
+            
+        # Create masks for labeled and unlabeled data
+        mask_labeled = (labels != 2)
+        mask_unlabeled = (labels == 2)
+
         images_labeled = images[mask_labeled].to(device)
-        labels_labeled = torch.tensor([label.item() for label in labels[mask_labeled]], dtype=torch.long).to(device)
+        labels_labeled = labels[mask_labeled].long().to(device)
 
         # Train on the labeled data
         optimizer.zero_grad()
@@ -133,7 +149,6 @@ for epoch in range(num_epochs):
         running_labeled_loss += loss.item() * images_labeled.size(0)
 
         # Pseudo-labeling for unlabeled data
-        mask_unlabeled = (labels == 'unlabeled')
         confidence_threshold = 0.95
         if mask_unlabeled.sum() > 0:
             images_unlabeled = images[mask_unlabeled].to(device)
