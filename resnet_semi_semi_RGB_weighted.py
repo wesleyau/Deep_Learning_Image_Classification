@@ -4,8 +4,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import resnet50
-from torchvision.models.resnet import ResNet50_Weights
-from torchvision.models.resnet import resnet50, ResNet, Bottleneck
+from torchvision.models.resnet import ResNet, Bottleneck
 from torchvision.models._utils import IntermediateLayerGetter
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
@@ -13,15 +12,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define the main directory and device
 main_directory = '/data/wesley/data2/dataset_tx'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Define the transform to be applied to the input images
+# This transformation has been updated to handle 3 color channels instead of 1.
 image_transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485], std=[0.229])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 class CrystalDataset(Dataset):
@@ -47,10 +45,10 @@ class CrystalDataset(Dataset):
         image_paths.sort()
 
         # Load the 4 images and process them individually
-        images = [Image.open(p) for p in image_paths]
+        images = [Image.open(p).convert("RGB") for p in image_paths]
 
-        # Convert images to tensors and concatenate along channel dimension
-        image_tensor = torch.cat([self.transform(img) for img in images], dim=1)
+        # Convert images to tensors and stack along a new dimension
+        image_tensor = torch.stack([self.transform(img) for img in images])
 
         if label == 'pass':
             label = 0
@@ -58,32 +56,31 @@ class CrystalDataset(Dataset):
             label = 1
         else:  # unlabeled
             label = 2  # use a specific integer for 'unlabeled'
-            
+                
         return image_tensor, label
+
 
 
 class MultiStreamResNet(nn.Module):
     def __init__(self, num_streams=4):
         super(MultiStreamResNet, self).__init__()
-        self.streams = nn.ModuleList([resnet50(weights=ResNet50_Weights.IMAGENET1K_V1) for _ in range(num_streams)])
+        self.streams = nn.ModuleList([resnet50() for _ in range(num_streams)])
 
         # Change the first convolution layer and last layer in each stream
         for stream in self.streams:
-            stream.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            stream.conv1 = nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             num_ftrs = stream.fc.in_features
             stream.fc = nn.Linear(num_ftrs, 2) 
             
     def forward(self, x):
-        # x shape: (batch_size, num_streams, height, width)
-        outputs = [stream(x[:, i:i+1, :, :]) for i, stream in enumerate(self.streams)]
+        # x shape: (batch_size, num_streams, channels, height, width)
+        outputs = [stream(x[:, i]) for i, stream in enumerate(self.streams)]
             
         # Average the outputs
         outputs = torch.stack(outputs, dim=2)  # outputs shape: (batch_size, num_classes, num_streams)
         outputs = torch.mean(outputs, dim=2)  # outputs shape: (batch_size, num_classes)
             
         return outputs
-
-
 
 # Create the model
 model = MultiStreamResNet(num_streams=4)
@@ -101,7 +98,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 # Define the training parameters
-batch_size = 10
+batch_size = 20
 num_epochs = 10
 
 # Create the training dataset and data loader
@@ -186,7 +183,7 @@ for epoch in range(num_epochs):
         running_loss += loss.item() * images_labeled.size(0)
 
         # Pseudo-labeling for unlabeled data
-        confidence_threshold = 0.80
+        confidence_threshold = 0.95
         if mask_unlabeled.sum() > 0:
             images_unlabeled = images[mask_unlabeled].to(device)
             outputs_unlabeled = model(images_unlabeled)
@@ -198,9 +195,9 @@ for epoch in range(num_epochs):
                 loss_unlabeled.backward()
                 optimizer.step()
                 running_loss += loss_unlabeled.item() * confident_indices.sum()
-                #print("Psuedo-labeling used")
-            #else:
-                #print("Pseudo-labeling skipped")
+                print("Psuedo-labeling used")
+            else:
+                print("Pseudo-labeling skipped")
                 
         # Update class_counts and class_weights after pseudo-labeling
         if mask_unlabeled.sum() > 0:

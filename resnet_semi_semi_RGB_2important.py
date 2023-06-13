@@ -4,8 +4,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import resnet50
-from torchvision.models.resnet import ResNet50_Weights
-from torchvision.models.resnet import resnet50, ResNet, Bottleneck
+from torchvision.models.resnet import ResNet, Bottleneck
 from torchvision.models._utils import IntermediateLayerGetter
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
@@ -13,15 +12,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define the main directory and device
 main_directory = '/data/wesley/data2/dataset_tx'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Define the transform to be applied to the input images
+# This transformation has been updated to handle 3 color channels instead of 1.
 image_transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485], std=[0.229])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 class CrystalDataset(Dataset):
@@ -29,6 +27,8 @@ class CrystalDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.samples = []
+        self.important_images = {'important_image_1.png': 1.5, 'important_image_2.png': 2.0}  # add your image filenames and their corresponding weights
+
 
         classes = ['pass', 'fail', 'unlabeled']
         for label in classes:
@@ -47,10 +47,14 @@ class CrystalDataset(Dataset):
         image_paths.sort()
 
         # Load the 4 images and process them individually
-        images = [Image.open(p) for p in image_paths]
+        images = [Image.open(p).convert("RGB") for p in image_paths]
 
-        # Convert images to tensors and concatenate along channel dimension
-        image_tensor = torch.cat([self.transform(img) for img in images], dim=1)
+        # Convert images to tensors and stack along a new dimension
+        image_tensor = torch.stack([self.transform(img) for img in images])
+
+        # Assign weights based on the filenames
+        weights = [self.important_images.get(os.path.basename(p), 1.0) for p in image_paths]  # use a default weight of 1.0 for images that are not in the important_images list
+        weights = torch.tensor(weights)
 
         if label == 'pass':
             label = 0
@@ -58,39 +62,38 @@ class CrystalDataset(Dataset):
             label = 1
         else:  # unlabeled
             label = 2  # use a specific integer for 'unlabeled'
-            
-        return image_tensor, label
+                
+        return image_tensor, label, weights
+
 
 
 class MultiStreamResNet(nn.Module):
     def __init__(self, num_streams=4):
         super(MultiStreamResNet, self).__init__()
-        self.streams = nn.ModuleList([resnet50(weights=ResNet50_Weights.IMAGENET1K_V1) for _ in range(num_streams)])
+        self.streams = nn.ModuleList([resnet50() for _ in range(num_streams)])
 
-        # Change the first convolution layer in each stream to take 1-channel input
+        # Change the first convolution layer and last layer in each stream
         for stream in self.streams:
-            stream.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            stream.conv1 = nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            num_ftrs = stream.fc.in_features
+            stream.fc = nn.Linear(num_ftrs, 2) 
             
-        self.stream_weights = torch.tensor([0.3, 0.3, 0.2, 0.2])  # assign different weights to the streams
-
     def forward(self, x):
-        # x shape: (batch_size, num_streams, height, width)
-        outputs = [stream(x[:, i:i+1, :, :]) for i, stream in enumerate(self.streams)]
+        # x shape: (batch_size, num_streams, channels, height, width)
+        outputs = [stream(x[:, i]) for i, stream in enumerate(self.streams)]
             
-        # Weighted average the outputs
+        # Average the outputs
         outputs = torch.stack(outputs, dim=2)  # outputs shape: (batch_size, num_classes, num_streams)
-        outputs = torch.sum(outputs * self.stream_weights.to(x.device), dim=2)  # outputs shape: (batch_size, num_classes)
+        outputs = torch.mean(outputs, dim=2)  # outputs shape: (batch_size, num_classes)
             
         return outputs
 
-
 # Create the model
-model = MultiStreamResNet(num_streams=4).to(device)
-model.stream_weights = model.stream_weights.to(device)
+model = MultiStreamResNet(num_streams=4)
 
 # Check if multiple GPUs are available and wrap the model using DataParallel
 if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    print("Using", torch.cuda.device_count(), "GPUs")
     model = nn.DataParallel(model)
 
 # Now move the model to the device
@@ -101,8 +104,8 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 # Define the training parameters
-batch_size = 10
-num_epochs = 10
+batch_size = 16
+num_epochs = 20
 
 # Create the training dataset and data loader
 train_directory = os.path.join(main_directory, 'train')
@@ -123,9 +126,34 @@ val_acc_history = []
 # Choose the number of batches for which to accumulate gradients
 accumulation_steps = 4
 
+# Change criterion to a placeholder, we'll initialize it properly inside the training loop
+criterion = None
+
 # Training loop
 for epoch in range(num_epochs):
     model.train()
+    
+    # Count samples in each class for each epoch
+    class_counts = {0: 0, 1: 0, 2: 0}
+    for _, labels in train_loader:
+        unique, counts = np.unique(labels.numpy(), return_counts=True)
+        class_counts.update(dict(zip(unique, counts)))
+    
+    # Count unlabeled samples as half for each class
+    # The reason for initially counting unlabeled crystals as half pass and half fail is based on the assumption that, 
+    # before we have any other information, unlabeled data is equally likely to be either 'pass' or 'fail'.
+    # As the training progresses, the pseudo-labeling process will assign a class to the unlabeled data, 
+    # and the class counts (and consequently class weights) will be updated based on these new labels.
+    unlabeled_count = class_counts.pop(2)
+    class_counts[0] += unlabeled_count / 2
+    class_counts[1] += unlabeled_count / 2
+    
+    # Calculate class weights and create the criterion
+    total_count = sum(class_counts.values())
+    class_weights = [total_count / class_counts[i] for i in range(2)]
+    class_weights = torch.FloatTensor(class_weights).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    
     running_loss = 0.0
     correct = 0
     total = 0
@@ -146,6 +174,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         outputs = model(images_labeled)
         loss = criterion(outputs, labels_labeled)
+        loss = (loss * weights).mean()  # calculate a weighted mean of the loss
         loss.backward()
 
         # Only perform an optimization step every `accumulation_steps` batches
@@ -161,7 +190,7 @@ for epoch in range(num_epochs):
         running_loss += loss.item() * images_labeled.size(0)
 
         # Pseudo-labeling for unlabeled data
-        confidence_threshold = 0.80
+        confidence_threshold = 0.95
         if mask_unlabeled.sum() > 0:
             images_unlabeled = images[mask_unlabeled].to(device)
             outputs_unlabeled = model(images_unlabeled)
@@ -173,9 +202,20 @@ for epoch in range(num_epochs):
                 loss_unlabeled.backward()
                 optimizer.step()
                 running_loss += loss_unlabeled.item() * confident_indices.sum()
-                #print("Psuedo-labeling used")
-            #else:
-                #print("Pseudo-labeling skipped")
+                print("Psuedo-labeling used")
+            else:
+                print("Pseudo-labeling skipped")
+                
+        # Update class_counts and class_weights after pseudo-labeling
+        if mask_unlabeled.sum() > 0:
+            unique, counts = torch.unique(pseudo_labels[confident_indices], return_counts=True)
+            for u, c in zip(unique.cpu().numpy(), counts.cpu().numpy()):
+                class_counts[u] += c
+
+            total_count = sum(class_counts.values())
+            class_weights = [total_count / class_counts[i] for i in range(2)]
+            class_weights = torch.FloatTensor(class_weights).to(device)
+            criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     train_loss = running_loss / total
     train_acc = correct / total
