@@ -29,6 +29,9 @@ def collect_statistics(folder_path):
                     'Median': np.median(data),
                     'Std': np.std(data),
                     'Quantile_1': np.percentile(data, 1),
+                    'Quantile_2': np.percentile(data, 2),
+                    'Quantile_3': np.percentile(data, 3),
+                    'Quantile_4': np.percentile(data, 4),
                     'Quantile_5': np.percentile(data, 5),
                     'Quantile_10': np.percentile(data, 10),
                     'Quantile_25': np.percentile(data, 25),
@@ -36,6 +39,9 @@ def collect_statistics(folder_path):
                     'Quantile_75': np.percentile(data, 75),
                     'Quantile_90': np.percentile(data, 90),
                     'Quantile_95': np.percentile(data, 95),
+                    'Quantile_95': np.percentile(data, 96),
+                    'Quantile_95': np.percentile(data, 97),
+                    'Quantile_95': np.percentile(data, 98),
                     'Quantile_99': np.percentile(data, 99)
                 }
                 folder_stats.append(stats)
@@ -58,6 +64,9 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
         file.write('Median: ' + str(overall_stats['Median']) + '\n')
         file.write('Std: ' + str(overall_stats['Std']) + '\n')
         file.write('Quantile 1: ' + str(overall_stats['Quantile_1']) + '\n')
+        file.write('Quantile 2: ' + str(overall_stats['Quantile_2']) + '\n')
+        file.write('Quantile 3: ' + str(overall_stats['Quantile_3']) + '\n')
+        file.write('Quantile 4: ' + str(overall_stats['Quantile_4']) + '\n')
         file.write('Quantile 5: ' + str(overall_stats['Quantile_5']) + '\n')
         file.write('Quantile 10: ' + str(overall_stats['Quantile_10']) + '\n')
         file.write('Quantile 25: ' + str(overall_stats['Quantile_25']) + '\n')
@@ -65,6 +74,9 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
         file.write('Quantile 75: ' + str(overall_stats['Quantile_75']) + '\n')
         file.write('Quantile 90: ' + str(overall_stats['Quantile_90']) + '\n')
         file.write('Quantile 95: ' + str(overall_stats['Quantile_95']) + '\n')
+        file.write('Quantile 96: ' + str(overall_stats['Quantile_96']) + '\n')
+        file.write('Quantile 97: ' + str(overall_stats['Quantile_97']) + '\n')
+        file.write('Quantile 98: ' + str(overall_stats['Quantile_98']) + '\n')
         file.write('Quantile 99: ' + str(overall_stats['Quantile_99']) + '\n')
         file.write('\n')
 
