@@ -39,9 +39,9 @@ def collect_statistics(folder_path):
                     'Quantile_75': np.percentile(data, 75),
                     'Quantile_90': np.percentile(data, 90),
                     'Quantile_95': np.percentile(data, 95),
-                    'Quantile_95': np.percentile(data, 96),
-                    'Quantile_95': np.percentile(data, 97),
-                    'Quantile_95': np.percentile(data, 98),
+                    'Quantile_96': np.percentile(data, 96),
+                    'Quantile_97': np.percentile(data, 97),
+                    'Quantile_98': np.percentile(data, 98),
                     'Quantile_99': np.percentile(data, 99)
                 }
                 folder_stats.append(stats)
@@ -89,6 +89,9 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
             file.write('Median: ' + str(stats['Median']) + '\n')
             file.write('Std: ' + str(stats['Std']) + '\n')
             file.write('Quantile 1: ' + str(stats['Quantile_1']) + '\n')
+            file.write('Quantile 2: ' + str(stats['Quantile_2']) + '\n')
+            file.write('Quantile 3: ' + str(stats['Quantile_3']) + '\n')
+            file.write('Quantile 4: ' + str(stats['Quantile_4']) + '\n')
             file.write('Quantile 5: ' + str(stats['Quantile_5']) + '\n')
             file.write('Quantile 10: ' + str(stats['Quantile_10']) + '\n')
             file.write('Quantile 25: ' + str(stats['Quantile_25']) + '\n')
@@ -96,6 +99,9 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
             file.write('Quantile 75: ' + str(stats['Quantile_75']) + '\n')
             file.write('Quantile 90: ' + str(stats['Quantile_90']) + '\n')
             file.write('Quantile 95: ' + str(stats['Quantile_95']) + '\n')
+            file.write('Quantile 96: ' + str(stats['Quantile_96']) + '\n')
+            file.write('Quantile 97: ' + str(stats['Quantile_97']) + '\n')
+            file.write('Quantile 98: ' + str(stats['Quantile_98']) + '\n')
             file.write('Quantile 99: ' + str(stats['Quantile_99']) + '\n')
             file.write('\n')
 
