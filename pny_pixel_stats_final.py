@@ -167,6 +167,9 @@ for root, dirs, files in os.walk(ty_directory):
             'Median': np.median([stats['Median'] for stats in folder_stats]),
             'Std': np.mean([stats['Std'] for stats in folder_stats]),
             'Quantile_1': np.percentile([stats['Quantile_1'] for stats in folder_stats], 1),
+            'Quantile_2': np.percentile([stats['Quantile_2'] for stats in folder_stats], 2),
+            'Quantile_3': np.percentile([stats['Quantile_3'] for stats in folder_stats], 3),
+            'Quantile_4': np.percentile([stats['Quantile_4'] for stats in folder_stats], 4),
             'Quantile_5': np.percentile([stats['Quantile_5'] for stats in folder_stats], 5),
             'Quantile_10': np.percentile([stats['Quantile_10'] for stats in folder_stats], 10),
             'Quantile_25': np.percentile([stats['Quantile_25'] for stats in folder_stats], 25),
@@ -174,8 +177,10 @@ for root, dirs, files in os.walk(ty_directory):
             'Quantile_75': np.percentile([stats['Quantile_75'] for stats in folder_stats], 75),
             'Quantile_90': np.percentile([stats['Quantile_90'] for stats in folder_stats], 90),
             'Quantile_95': np.percentile([stats['Quantile_95'] for stats in folder_stats], 95),
+            'Quantile_96': np.percentile([stats['Quantile_96'] for stats in folder_stats], 96),
+            'Quantile_97': np.percentile([stats['Quantile_97'] for stats in folder_stats], 97),
+            'Quantile_98': np.percentile([stats['Quantile_98'] for stats in folder_stats], 98),
             'Quantile_99': np.percentile([stats['Quantile_99'] for stats in folder_stats], 99)
         }
-
         # Save statistics to a text file in the TY output folder
         save_statistics_to_file(root, folder_stats, ty_output_folder, total_files, overall_stats)
