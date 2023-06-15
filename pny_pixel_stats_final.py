@@ -70,6 +70,10 @@ def collect_statistics(folder_path):
                     'Quantile_88': np.percentile(data, 88),
                     'Quantile_89': np.percentile(data, 89),
                     'Quantile_90': np.percentile(data, 90),
+                    'Quantile_91': np.percentile(data, 91),
+                    'Quantile_92': np.percentile(data, 92),
+                    'Quantile_93': np.percentile(data, 93),
+                    'Quantile_94': np.percentile(data, 94),
                     'Quantile_95': np.percentile(data, 95),
                     'Quantile_96': np.percentile(data, 96),
                     'Quantile_97': np.percentile(data, 97),
@@ -137,6 +141,10 @@ def save_statistics_to_file(folder_path, folder_stats, output_folder, total_file
         file.write('Quantile 88: ' + str(overall_stats['Quantile_88']) + '\n')
         file.write('Quantile 89: ' + str(overall_stats['Quantile_89']) + '\n')
         file.write('Quantile 90: ' + str(overall_stats['Quantile_90']) + '\n')
+        file.write('Quantile 91: ' + str(overall_stats['Quantile_91']) + '\n')
+        file.write('Quantile 92: ' + str(overall_stats['Quantile_92']) + '\n')
+        file.write('Quantile 93: ' + str(overall_stats['Quantile_93']) + '\n')
+        file.write('Quantile 94: ' + str(overall_stats['Quantile_94']) + '\n')
         file.write('Quantile 95: ' + str(overall_stats['Quantile_95']) + '\n')
         file.write('Quantile 96: ' + str(overall_stats['Quantile_96']) + '\n')
         file.write('Quantile 97: ' + str(overall_stats['Quantile_97']) + '\n')
