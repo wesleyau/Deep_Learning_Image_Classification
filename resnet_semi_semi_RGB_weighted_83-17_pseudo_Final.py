@@ -91,7 +91,7 @@ model = model.to(device)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adadelta(model.parameters(), lr=0.001)  # Define the optimizer here
+optimizer = optim.Adam(model.parameters(), lr=0.001)  # Define the optimizer here
 
 # Define the training parameters
 batch_size = 50
