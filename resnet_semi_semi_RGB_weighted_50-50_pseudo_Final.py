@@ -95,11 +95,11 @@ model = model.to(device)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adagrad(model.parameters(), lr=0.001)
 
 # Define the training parameters
 batch_size = 50
-num_epochs = 30
+num_epochs = 10
 
 # Create the training dataset and data loader
 train_directory = os.path.join(main_directory, 'train')

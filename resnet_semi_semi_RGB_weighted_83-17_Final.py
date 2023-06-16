@@ -105,7 +105,7 @@ class_weights = torch.FloatTensor([total_samples / (num_pass * 0.83), total_samp
 
 # Update the criterion with class weights
 criterion = nn.CrossEntropyLoss(weight=class_weights)
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # Create the validation dataset and data loader
 val_directory = os.path.join(main_directory, 'val')
