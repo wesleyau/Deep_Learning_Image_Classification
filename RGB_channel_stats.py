@@ -1,37 +1,38 @@
-import numpy as np
 import os
-from PIL import Image
+import numpy as np
 
-image_directory = '/data/wesley/stats_vmin_vmax/npz_folder/TX'
+# Initialize accumulators
+count = 0
+mean_acc = 0.0
+sd_acc = 0.0
+var_acc = 0.0
 
-# Variables to store cumulative sums
-pixel_sum = np.zeros(3, dtype=np.float64)
-pixel_squared_sum = np.zeros(3, dtype=np.float64)
-total_images = 0
-total_pixels = 0
+# Specify the directory you want to start from
+rootDir = '/data/wesley/stats_vmin_vmax/npz_folder/TY_npy'
 
-# Iterate over the PNG images in the directory and its subdirectories
-for root, dirs, files in os.walk(image_directory):
-    for filename in files:
-        if filename.endswith(".png"):
-            image_path = os.path.join(root, filename)
-            image = Image.open(image_path).convert('RGB')
-            image_array = np.array(image)
+for dirName, subdirList, fileList in os.walk(rootDir):
+    for fname in fileList:
+        if fname.endswith('.npy'):
+            file_path = os.path.join(dirName, fname)
+            data = np.load(file_path)
+            
+            # Ignore the files containing Inf values
+            if np.any(np.isinf(data)):
+                print(f"File {file_path} contains Inf values. Ignoring this file in calculations.")
+                continue
 
-            # Accumulate pixel sums
-            pixel_sum += np.sum(image_array, axis=(0, 1))
-            pixel_squared_sum += np.sum(np.square(image_array), axis=(0, 1))
-            total_images += 1
-            total_pixels += image_array.shape[0] * image_array.shape[1]
+            # Perform calculations for the array ignoring NaNs
+            mean_acc += np.nanmean(data)
+            sd_acc += np.nanstd(data)
+            var_acc += np.nanvar(data)
+            count += 1
 
-# Calculate mean and standard deviation per channel
-if total_images > 0 and total_pixels > 0:
-    mean = pixel_sum / total_pixels
-    std = np.sqrt(pixel_squared_sum / total_pixels - mean ** 2)
-else:
-    mean = np.zeros(3)
-    std = np.zeros(3)
+# Compute averages across all files
+mean_acc /= count
+sd_acc /= count
+var_acc /= count
 
-print("Mean per channel:", mean)
-print("Standard deviation per channel:", std)
-print("Total number of images:", total_images)
+print(f"Processed {count} .npy files")
+print(f"Mean: {mean_acc}")
+print(f"SD: {sd_acc}")
+print(f"Variance: {var_acc}")
