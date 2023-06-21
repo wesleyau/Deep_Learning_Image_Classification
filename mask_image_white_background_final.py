@@ -114,7 +114,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
 
                 # Save the pixel values within the specified vmin and vmax ranges
                 np.save(modified_npy_file_path, np.clip(cropped_image_array, vmin, vmax))
-
+                
                 # Create a PIL image from the cropped image array
                 cropped_image = Image.fromarray(cropped_image_array)
 

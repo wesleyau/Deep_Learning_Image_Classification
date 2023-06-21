@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/stats_vmin_vmax/npz_folder/TY'
+main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions1/TY'
 1
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -66,7 +66,11 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
     
                 # Crop the image array
                 cropped_image_array = masked_image[cropping_range]
-    
+                
+                # If the image is Eres_image or Elin_image, remove padding
+                if 'Eres_image' in file_name or 'Elin_image' in file_name:
+                    cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
+                    
                 # Get the relative path of the file within the main directory
                 relative_path = os.path.relpath(file_path, main_directory)
                 
@@ -95,15 +99,15 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine vmin and vmax based on filename
                 vmin, vmax = None, None
                 if 'Co_image' in file_name:
-                    vmin, vmax = 116.3644340509959, 123.45736965252537
+                    vmin, vmax = 116.7947781092469, 123.74717119370025
                 elif 'Am_image' in file_name:
-                    vmin, vmax = 57.14208740572106, 64.87569049039436
+                    vmin, vmax = 59.99483151311375, 65.26089135691268
                 elif 'Elin_image' in file_name:
-                    vmin, vmax = 1.8542408563578376, 2.050740927990755  # This may need to be fiddled with, this image is most variable between the tx and ty machines
+                    vmin, vmax = 1.840720640553683, 1.980556323891534  # This may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
-                    vmin, vmax = 0.09232102338189466, 0.11963242939425757
+                    vmin, vmax = 0.09108913339833097, 0.11929501748534238
                 elif 'TC_image' in file_name:
-                    vmin, vmax = 0.9862499781469655, 1.030413229647149
+                    vmin, vmax = 0.9778910754450171, 1.030413229647149
                 else:
                     print(file_name + " does not contain any substring in the filename")  # Default values if no specific word is found
                 
@@ -115,7 +119,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 np.save(modified_npy_file_path, np.clip(cropped_image_array, vmin, vmax))
     
                 # Create a Matplotlib figure and axis
-                fig, ax = plt.subplots()
+                fig, ax = plt.subplots(figsize=(256/80, 256/80), dpi=80)
     
                 # Display the image without axis and white space
                 ax.imshow(cropped_image_array, vmin=vmin, vmax=vmax)
@@ -130,7 +134,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Save the cropped image in the respective directory with a modified filename
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
-                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")

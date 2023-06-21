@@ -19,15 +19,16 @@ print(os.getcwd())
 npz = np.load('../TX202201040933_TX202201041024.npz')
 print(npz.files)
 print(npz['TX202201040625_TX202201040729_Eres_image'].shape)
-print(npz['TX202206101252_TX202206101337_Elin_image'][0])
+print(npz['masked_TX202201040625_TX202201040729_Elin_image'])
+print(npz['masked_TX202201040625_TX202201040729_Elin_image'].shape)
 
 print(type(npz['TX202206101252_TX202206101337_Elin_image']))
-print(npz['TX202206101252_TX202206101337_Elin_image'].shape)
+print(npz['masked_TX202201040625_TX202201040729_Elin_image'].shape)
 print(type(npz['TX202206101252_TX202206101337_Elin_image'][0, 0]))
 
 print(npz['Elin_image'].shape)
 print(npz['masked_TX202201040625_TX202201040729_Am_image'].isna())
-print(npz['masked_TX202206101252_TX202206101337_Elin_image'].shape)
+print(npz['masked_TX202201040933_TX202201041024_Co_image'])
 print(npz['masked_TX202201040625_TX202201040729_Eres_image'].shape)
 print(npz['masked_TX202201040625_TX202201040729_Co_image'].shape)
 
@@ -35,6 +36,7 @@ plt.imshow(npz['TC_image'])
 
 
 image = plt.imshow(npz['masked_TX202201040625_TX202201040729_Am_image'])
+#image = plt.imshow(npz['Am_image'])
 # Turn off axis and white space
 plt.axis('off')
 plt.autoscale(tight=True)
@@ -48,3 +50,10 @@ mean_value = np.nanmean(npz['masked_TX202301181108_TX202301181231_Co_image'])
 # Print the mean
 print("Mean:", mean_value)
 
+from PIL import Image
+import os
+print(os.getcwd())
+im = Image.open('/data/wesley/stats_vmin_vmax/npz_folder/TX/Co_image/masked_png_Co/masked_TX202201040625_TX202201040729_Co_image.png')
+width, height = im.size
+print("Width: ", width)
+print("Height: ", height)
