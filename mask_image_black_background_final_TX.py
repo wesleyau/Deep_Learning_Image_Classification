@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions1/TX'
+main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions/TX'
 1
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -67,9 +67,8 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Crop the image array
                 cropped_image_array = masked_image[cropping_range]
 
-                # If the image is Eres_image or Elin_image, remove padding
-                if 'Eres_image' in file_name or 'Elin_image' in file_name:
-                    cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
+                # Unpad after cropping
+                unpadded_cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
 
                 
                 # Get the relative path of the file within the main directory
@@ -135,7 +134,8 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Save the cropped image in the respective directory with a modified filename
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
-                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
+                #bbox_inches='tight', 
+                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
                 plt.close(fig)
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")

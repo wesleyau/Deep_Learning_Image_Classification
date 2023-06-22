@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions1/TY'
+main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions/TY'
 1
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -77,7 +77,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Get the directory path within the main directory
                 save_directory = os.path.dirname(os.path.join(main_directory, relative_path))
     
-                # Extract the image class from the filename
+                # Extract the image class from the fil#bbox_inches='tight', name
                 image_class = ''
                 if 'Co_image' in file_name:
                     image_class = 'Co'
@@ -134,7 +134,8 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Save the cropped image in the respective directory with a modified filename
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
-                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
+                #bbox_inches='tight', 
+                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
                 plt.close(fig)
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")
