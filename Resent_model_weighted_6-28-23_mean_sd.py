@@ -32,7 +32,7 @@ class CrystalDataset(Dataset):
                     image_path = os.path.join(sample_dir, file)
                     image = Image.open(image_path).convert('L')  # Ensure the image is grayscale
                     if self.transform:
-                        image = self.transform(image).squeeze()
+                        image = self.transform(image)
                     images.append(image)  # Add image without adding a channel dimension
 
         images = torch.stack(images, dim=0)  # Stack along the new channel dimension
@@ -44,20 +44,43 @@ class CrystalDataset(Dataset):
         return {"images": images, "furnace_number": furnace_number}, label
 
 
-
-
-transform = transforms.Compose([
+# Simple transform for mean/std calculation
+simple_transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor(),
 ])
 
-dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset", transform=transform)
+# Create datasets with simple transform
+train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_train", transform=simple_transform)
+test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_test", transform=simple_transform)
 
-# Split the dataset into train and test
-train_size = int(0.8 * len(dataset))
-test_size = len(dataset) - train_size
-train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+# Calculate mean and std of training dataset
+mean = 0.0
+for data, _ in train_dataset:
+    batch_samples = data['images'].size(0) 
+    data = data['images'].view(batch_samples, data['images'].size(1), -1)
+    mean += data.mean(2).sum(0)
+mean = mean / len(train_dataset)
 
+var = 0.0
+for data, _ in train_dataset:
+    batch_samples = data['images'].size(0)
+    data = data['images'].view(batch_samples, data['images'].size(1), -1)
+    var += ((data - mean.unsqueeze(1))**2).sum([0,2])
+std = torch.sqrt(var / (len(train_dataset)*256*256))
+
+# Full transform for training, including normalization
+full_transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std),
+])
+
+# Recreate datasets with full transform
+train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_train", transform=full_transform)
+test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_test", transform=full_transform)
+
+# Now continue with dataloader creation and the rest of your code...
 train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
