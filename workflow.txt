@@ -16,3 +16,6 @@ mv TY* ./TY
 6. run PCA_vim_vmax.py and K-S test.py on both raw and masked .npy files to see if they can be combined (probably not though)
 
 7 
+mv /data/wesley/data2_6-27-23/TX_dataset/*Unlabeled /data/wesley/data2_6-27-23/TX_dataset_unlabeled
+mv /data/wesley/data2_6-27-23/TY_dataset/*Unlabeled /data/wesley/data2_6-27-23/TY_dataset_unlabeled
+

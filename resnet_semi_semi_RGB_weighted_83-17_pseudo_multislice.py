@@ -3,13 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.models as models
-from torchvision import models
 from torchvision.models import resnet50
 from torch.utils.data import DataLoader, Dataset
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
 
 main_directory = '/data/wesley/data2/dataset_tx_pseudo'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -43,8 +41,8 @@ class CrystalDataset(Dataset):
         image_paths, label = self.samples[idx]
         image_paths.sort()
 
-        # Load the grayscale images
-        images = [Image.fromarray(np.array(Image.open(p))) for p in image_paths]
+        # Load the grayscale images using np.load
+        images = [np.load(p, allow_pickle=True) for p in image_paths]
 
         # Convert images to tensors and stack along a new dimension
         image_tensor = torch.stack([self.transform(img) for img in images])
