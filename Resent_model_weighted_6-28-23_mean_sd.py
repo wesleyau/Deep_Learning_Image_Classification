@@ -22,25 +22,30 @@ class CrystalDataset(Dataset):
 
     def __getitem__(self, idx):
         sample_dir = os.path.join(self.root_dir, self.samples[idx])
-        
-        # Look for specific image types in the directory
+        print(f"Looking at sample directory: {sample_dir}")
+            
         image_types = ['Am_image', 'Co_image', 'Elin_image', 'Eres_image']
+        print(f"Looking for images of types: {image_types}")
         images = []
-        for image_type in image_types:
-            for file in os.listdir(sample_dir):
+        for file in os.listdir(sample_dir):
+            print(f"Checking file: {file}")
+            for image_type in image_types:
                 if image_type in file:
+                    print(f"Matched file: {file}")
                     image_path = os.path.join(sample_dir, file)
                     image = Image.open(image_path).convert('L')  # Ensure the image is grayscale
                     if self.transform:
                         image = self.transform(image)
                     images.append(image)  # Add image without adding a channel dimension
 
+        print(f"Images found: {len(images)}")
+
         images = torch.stack(images, dim=0)  # Stack along the new channel dimension
-        
+            
         filename = self.samples[idx]
         furnace_number = int(filename[0])
         label = 1 if "Pass" in filename else 0
-        
+            
         return {"images": images, "furnace_number": furnace_number}, label
 
 
@@ -51,8 +56,8 @@ simple_transform = transforms.Compose([
 ])
 
 # Create datasets with simple transform
-train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_train", transform=simple_transform)
-test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_test", transform=simple_transform)
+train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/train", transform=simple_transform)
+test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/test", transform=simple_transform)
 
 # Calculate mean and std of training dataset
 mean = 0.0
@@ -77,8 +82,8 @@ full_transform = transforms.Compose([
 ])
 
 # Recreate datasets with full transform
-train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_train", transform=full_transform)
-test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/TX_dataset_test", transform=full_transform)
+train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/train", transform=full_transform)
+test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/test", transform=full_transform)
 
 # Now continue with dataloader creation and the rest of your code...
 train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
