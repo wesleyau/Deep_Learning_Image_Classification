@@ -22,7 +22,7 @@ class CrystalDataset(Dataset):
 
     def __getitem__(self, idx):
         sample_dir = os.path.join(self.root_dir, self.samples[idx])
-
+        
         # Look for specific image types in the directory
         image_types = ['Am_image', 'Co_image', 'Elin_image', 'Eres_image']
         images = []
@@ -36,12 +36,13 @@ class CrystalDataset(Dataset):
                     images.append(image)  # Add image without adding a channel dimension
 
         images = torch.stack(images, dim=0)  # Stack along the new channel dimension
-
+        
         filename = self.samples[idx]
         furnace_number = int(filename[0])
         label = 1 if "Pass" in filename else 0
-
+        
         return {"images": images, "furnace_number": furnace_number}, label
+
 
 transform = transforms.Compose([
     transforms.Resize((256, 256)),
@@ -49,12 +50,11 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[46.25611771855562], std=[0.485897429579875]),  # replace 'your_mean' and 'your_std' with your dataset's mean and std
 ])
 
-train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/train", transform=transform)
-test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TX/test", transform=transform)
+train_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TY/train", transform=transform)
+test_dataset = CrystalDataset(root_dir="/data/wesley/data2_6-27-23/train_test/TY/test", transform=transform)
 
 train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-
 
 class CrystalClassifier(nn.Module):
     def __init__(self):
@@ -62,22 +62,30 @@ class CrystalClassifier(nn.Module):
         self.resnet = models.resnet50(weights=models.resnet.ResNet50_Weights.IMAGENET1K_V1)
         self.resnet.conv1 = nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)  # Adjust the number of input channels
         self.resnet.fc = nn.Linear(in_features=2048, out_features=2, bias=True)
-        self.fc1 = nn.Linear(in_features=1004, out_features=2)
+        self.fc1 = nn.Linear(in_features=3, out_features=2)
 
     def forward(self, x, furnace_number):
         x = self.resnet(x)
-        print(f'ResNet output shape: {x.shape}')  # This line is added to print the output shape
         x = x.view(x.size(0), -1)
+        
+        # expand dimensions of furnace_number to concatenate it with x
+        furnace_number = furnace_number.view(-1, 1).float()  # reshape and convert to float
+        x = torch.cat((x, furnace_number), dim=1)  # concatenate along the channel dimension
+        
         x = self.fc1(x)
         return x
-
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model = CrystalClassifier().to(device)
 
+# Check if multiple GPUs are available and wrap the model using DataParallel
+if torch.cuda.device_count() > 1:
+    print("Using", torch.cuda.device_count(), "GPUs")
+    model = torch.nn.DataParallel(model)
+
 # Calculate weights
-num_total = len(train_dataset)
+num_total = len(train_dataset)  
 num_pass = sum([1 for _, label in train_dataset if label == 1])
 num_fail = num_total - num_pass
 weights = torch.tensor([num_total / num_fail, num_total / num_pass], dtype=torch.float).to(device)
@@ -85,8 +93,8 @@ weights = torch.tensor([num_total / num_fail, num_total / num_pass], dtype=torch
 # Pass the weights to the loss function
 criterion = torch.nn.CrossEntropyLoss(weight=weights)
 
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
+#optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # Initialize lists to store loss and accuracy values for plotting
 train_loss_list = []
 valid_loss_list = []
@@ -108,7 +116,7 @@ for epoch in range(10):
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        print("Inputs shape:", inputs.shape)
+        #print("Inputs shape:", inputs.shape)
         outputs = model(inputs, furnace_number)
         _, predicted = torch.max(outputs.data, 1)
         loss = criterion(outputs, labels)
@@ -178,8 +186,9 @@ plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
 
-# Plot confusion matrix
+# Confusion matrix
 cm = confusion_matrix(all_labels, all_predictions)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Fail", "Pass"])
-disp.plot()
+ConfusionMatrixDisplay(cm, display_labels=['Fail', 'Pass']).plot(values_format='d')
 plt.show()
+
+print('Finished Training')
