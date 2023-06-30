@@ -102,7 +102,7 @@ train_acc_list = []
 valid_acc_list = []
 
 # Train the model
-for epoch in range(10):
+for epoch in range(15):
     train_running_loss = 0.0
     train_correct = 0
     train_total = 0
@@ -169,8 +169,8 @@ for epoch in range(10):
 
 # After training, plot loss and accuracy for training and validation sets
 plt.figure()
-plt.plot(train_loss_list, label='Training Loss')
-plt.plot(valid_loss_list, label='Validation Loss')
+plt.plot(train_loss_list, label='TX Training Loss')
+plt.plot(valid_loss_list, label='TX Validation Loss')
 plt.title('Loss Plot')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
@@ -178,8 +178,8 @@ plt.legend()
 plt.show()
 
 plt.figure()
-plt.plot(train_acc_list, label='Training Accuracy')
-plt.plot(valid_acc_list, label='Validation Accuracy')
+plt.plot(train_acc_list, label='TX Training Accuracy')
+plt.plot(valid_acc_list, label='TX Validation Accuracy')
 plt.title('Accuracy Plot')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
