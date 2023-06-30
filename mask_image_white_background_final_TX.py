@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions1/TX'
-1
+main_directory = '/data/wesley/2_data/npz_folder/TX'
+
 # Padding parameters
 padding_size = 1  # Size of the border extension
 padding_value = np.nan  # Value to fill the border with
@@ -99,13 +99,13 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine vmin and vmax based on filename
                 vmin, vmax = None, None
                 if 'Co_image' in file_name:
-                    vmin, vmax = 116.7947781092469, 123.74717119370025
+                    vmin, vmax = 116.64515458186459, 124.27568574823636
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59.99483151311375, 65.26089135691268
                 elif 'Elin_image' in file_name:
                     vmin, vmax = 1.840720640553683, 1.980556323891534  # This may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
-                    vmin, vmax = 0.09108913339833097, 0.11929501748534238
+                    vmin, vmax = 0.091100010302509, 0.11733093616662568
                 elif 'TC_image' in file_name:
                     vmin, vmax = 0.9778910754450171, 1.030413229647149
                 else:

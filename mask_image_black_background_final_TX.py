@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/stats_vmin_vmax/npz_folder_dimensions/TX'
-1
+main_directory = '/data/wesley/2_data/npz_folder/TX'
+
 # Padding parameters
 padding_size = 1  # Size of the border extension
 padding_value = np.nan  # Value to fill the border with

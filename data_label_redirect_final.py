@@ -13,7 +13,7 @@ def move_files(source, destination):
 directory_path = "/data/wesley/data2/mask_ty_png_no_replacement"
 
 # Path to the text file containing the words
-txt_file_path = "/data/wesley/Code/full_fail.txt"
+txt_file_path = "/data/wesley/2_data/npz_folder/2channel_labels.txt"
 
 # Output directory to move the files
 output_directory = "/data/wesley/data2/dataset_ty/labeled/fail"
