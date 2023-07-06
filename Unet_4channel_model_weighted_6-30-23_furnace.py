@@ -57,22 +57,20 @@ train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 class double_conv(nn.Module):
-    '''(conv => BN => ReLU) * 2'''
-    def __init__(self, in_ch, out_ch):
+    def __init__(self, in_channels_1, out_channels_1, in_channels_2, out_channels_2):
         super(double_conv, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, 3, padding=1),
-            nn.BatchNorm2d(out_ch),
+            nn.Conv2d(in_channels_1, out_channels_1, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels_1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_ch, out_ch, 3, padding=1),
-            nn.BatchNorm2d(out_ch),
+            nn.Conv2d(in_channels_2, out_channels_2, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels_2),
             nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
         x = self.conv(x)
         return x
-
 
 class Up(nn.Module):
     def __init__(self, in_channels, out_channels, bilinear=True):
@@ -81,10 +79,10 @@ class Up(nn.Module):
         # if not bilinear, use the normal transposed convolutions
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+            self.conv = double_conv(in_channels * 2, out_channels, out_channels, out_channels)
         else:
             self.up = nn.ConvTranspose2d(in_channels , in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConv(in_channels, out_channels)
+            self.conv = double_conv(in_channels * 2, out_channels, out_channels, out_channels)
 
 
     def forward(self, x1, x2):
@@ -104,9 +102,13 @@ class Up(nn.Module):
         return self.conv(x)
 
 class CrystalClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, n_channels, n_classes):
         super(CrystalClassifier, self).__init__()
-        self.inc = double_conv(4, 64)
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = True
+
+        self.inc = double_conv(n_channels, 64, n_channels, 64)
         self.down1 = nn.Sequential(
             nn.MaxPool2d(2),
             double_conv(64, 128)
@@ -123,10 +125,10 @@ class CrystalClassifier(nn.Module):
             nn.MaxPool2d(2),
             double_conv(512, 512)
         )
-        self.up1 = up(1024, 256)
-        self.up2 = up(512, 128)
-        self.up3 = up(256, 64)
-        self.up4 = up(128, 64)
+        self.up1 = Up(1024, 256)
+        self.up2 = Up(512, 128)
+        self.up3 = Up(256, 64)
+        self.up4 = Up(128, 64)
         self.outc = nn.Linear(64, 2)
         self.fc1 = nn.Linear(3, 2)
 

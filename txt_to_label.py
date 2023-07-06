@@ -23,6 +23,12 @@ for line in lines:
         # Create the target folder if it doesn't exist
         if not os.path.exists(target_folder_path):
             os.makedirs(target_folder_path)
+        else:
+            # Delete existing files in the target folder
+            existing_files = os.listdir(target_folder_path)
+            for file_name in existing_files:
+                file_path = os.path.join(target_folder_path, file_name)
+                os.remove(file_path)
 
         # Find matching PNG files and move them to the target folder
         for root, _, files in os.walk(source_directory):
@@ -30,3 +36,7 @@ for line in lines:
                 if file.endswith('.png') and first_column in file:
                     source_file_path = os.path.join(root, file)
                     shutil.move(source_file_path, target_folder_path)
+
+        # Delete the target folder if it's empty
+        if not os.listdir(target_folder_path):
+            os.rmdir(target_folder_path)

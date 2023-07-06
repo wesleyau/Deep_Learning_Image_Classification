@@ -3,8 +3,8 @@ import shutil
 import math
 
 # Define source directory and destination directory
-source_directory = '/data/wesley/data2_6-27-23/TY_dataset'
-destination_directory = '/data/wesley/data2_6-27-23/train_test/TY'
+source_directory = '/data/wesley/2_data/npz_folder/TY'
+destination_directory = '/data/wesley/2_data/train_test/TY'
 
 # Create train and test directories
 os.makedirs(os.path.join(destination_directory, 'train'), exist_ok=True)
