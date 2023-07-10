@@ -10,7 +10,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import torch.nn as nn
+from matplotlib.ticker import MaxNLocator
+from datetime import datetime
 
+# Generate a timestamp
+timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 # Image transformations
 transform = transforms.Compose([
@@ -33,22 +37,34 @@ class CustomImageFolder(Dataset):
             for furnace in furnaces:
                 furnace_num = int(furnace.split("_")[0][0])  # extract first character as furnace number
                 furnace_dir = os.path.join(class_dir, furnace)
-                for img_name in os.listdir(furnace_dir):
+                imgs = []
+                for img_name in sorted(os.listdir(furnace_dir)):
                     if img_name.endswith('.png'):
                         img_path = os.path.join(furnace_dir, img_name)
-                        self.imgs.append(img_path)
-                        self.labels.append(i)  # assign label based on class
-                        self.furnace_nums.append(furnace_num)
+                        imgs.append(img_path)
+                # Group every two images together
+                for j in range(0, len(imgs), 2):
+                    self.imgs.append([imgs[j], imgs[j + 1]])
+                    self.labels.append(i)  # assign label based on class
+                    self.furnace_nums.append(furnace_num)
     
     def __len__(self):
         return len(self.imgs)
     
     def __getitem__(self, index):
-        img = self.transform(Image.open(self.imgs[index]))
+        img1 = self.transform(Image.open(self.imgs[index][0]))
+        img2 = self.transform(Image.open(self.imgs[index][1]))
+        img = torch.cat([img1, img2], dim=0)  # concatenate along the channel dimension
         label = self.labels[index]
         furnace_num = torch.tensor([self.furnace_nums[index]], dtype=torch.float32)  # pass as tensor
         return img, furnace_num, label
 
+
+# Define the path to the output directory
+output_dir = f'/data/wesley/2_data/model_outputs/TX/{timestamp}'
+
+# Create the output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
 
 # Load the data
 train_data = CustomImageFolder('/data/wesley/2_data/train_test/TX/train', transform=transform)
@@ -61,8 +77,8 @@ val_loader = DataLoader(val_data, batch_size=32, shuffle=False)
 # Define the model
 model = models.resnet50(weights=models.resnet.ResNet50_Weights.IMAGENET1K_V1)
 
-# Change the first layer to accept the grayscale images
-model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+# Change the first layer to accept the two-channel images
+model.conv1 = nn.Conv2d(2, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 
 # Change the last layer to accept the furnace number along with the CNN features
 num_ftrs = model.fc.in_features
@@ -89,12 +105,16 @@ class CustomModel(nn.Module):
 
 model = CustomModel(model)
 
-# Define the loss function and the optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Define the loss function and the optimizer
+weights = [0, 1]  # class 0 is "Passes" and class 1 is "Fails"
+class_weights = torch.FloatTensor(weights).to(device)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+#criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adagrad(model.parameters(), lr=0.001)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -106,6 +126,8 @@ model.to(device)
 train_losses, val_losses, train_accs, val_accs = [], [], [], []
 
 best_acc = 0.0  # Track best validation accuracy
+best_epoch = 0 # Track best epoch
+
 # Training loop
 for epoch in range(10):  # 10 epochs, adjust as needed
     model.train()  
@@ -156,15 +178,25 @@ for epoch in range(10):  # 10 epochs, adjust as needed
     if val_acc > best_acc:
         best_acc = val_acc
         best_model_wts = model.state_dict()
+        best_epoch = epoch + 1
 
 # Load best model weights
 model.load_state_dict(best_model_wts)
 
-# Save the best model
-torch.save(best_model_wts, '/data/wesley/2_data/model_outputs/best_model.pt')
+nb_classes = 2
+confusion_matrix_best = torch.zeros(nb_classes, nb_classes)
+with torch.no_grad():
+    for inputs, furnace_nums, labels in val_loader:
+        inputs, furnace_nums, labels = inputs.to(device), furnace_nums.float().to(device), labels.to(device)
+        outputs = model(inputs, furnace_nums)
+        _, preds = torch.max(outputs, 1)
+        for t, p in zip(labels.view(-1), preds.view(-1)):
+            confusion_matrix_best[t.long(), p.long()] += 1
+
+# Save the model
+torch.save(model.state_dict(), os.path.join(output_dir, 'model_best.pth'))
 
 # Confusion matrix
-nb_classes = 2
 confusion_matrix = torch.zeros(nb_classes, nb_classes)
 with torch.no_grad():
     for inputs, furnace_nums, labels in val_loader:
@@ -182,7 +214,7 @@ sns.heatmap(confusion_matrix, annot=True, fmt=".0f", linewidths=.5, square = Tru
 plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 plt.title('Confusion Matrix', size = 15)
-plt.savefig('/data/wesley/2_data/model_outputs/confusion_matrix.png')
+plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
 
 # Plotting the training and validation loss
 plt.figure(figsize=(10, 5))
@@ -192,7 +224,7 @@ plt.plot(val_losses, label='Validation Loss')
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.legend()
-plt.savefig('/data/wesley/2_data/model_outputs/loss_plot.png')
+plt.savefig(os.path.join(output_dir, 'loss_plot.png'))
 
 # Plotting the training and validation accuracy
 plt.figure(figsize=(10, 5))
@@ -202,4 +234,12 @@ plt.plot(val_accs, label='Validation Accuracy')
 plt.xlabel("Epochs")
 plt.ylabel("Accuracy")
 plt.legend()
-plt.savefig('/data/wesley/2_data/model_outputs/acc_plot.png')
+plt.savefig(os.path.join(output_dir, 'acc_plot.png'))
+
+#save best confusion matrix
+plt.figure(figsize=(10,10))
+sns.heatmap(confusion_matrix_best, annot=True, fmt=".0f", linewidths=.5, square = True, cmap = 'Blues')
+plt.ylabel('Actual label')
+plt.xlabel('Predicted label')
+plt.title(f'Confusion Matrix for Best Epoch ({best_epoch})', size = 15)
+plt.savefig(os.path.join(output_dir, f'confusion_matrix_best_{best_epoch}.png'))
