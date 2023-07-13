@@ -97,8 +97,6 @@ class CustomModel(nn.Module):
 
     def forward(self, x, furnace_num):
         x = self.base_model(x)
-        #print(x.shape)  # Add this line
-        #print("Size after base model: ", x.size())  # Add this line
         x = torch.flatten(x, start_dim=1)
         x = torch.cat([x, furnace_num], dim=1)
         x = self.fc(x)
@@ -107,7 +105,7 @@ class CustomModel(nn.Module):
 model = CustomModel(model)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+model = model.to(device)  # Move model to device before defining optimizers
 
 #criterion = nn.CrossEntropyLoss()
 # Define the optimizers you want to compare
@@ -130,18 +128,15 @@ for opt_name, opt in optimizers.items():
     model.load_state_dict(initial_model_weights)
     
     # Define the loss function and the optimizer
-    weights = [0.7, 0.3]  # class 0 is "Passes" and class 1 is "Fails"
+    weights = [0.65, 0.35]  # class 0 is "Passes" and class 1 is "Fails"
     class_weights = torch.FloatTensor(weights).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = opt
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
 
     if torch.cuda.device_count() > 1:   
             print("Let's use", torch.cuda.device_count(), "GPUs!")
             model = nn.DataParallel(model)
-
-    # Now move the model to the device
-    model = model.to(device)
 
     # Lists for saving epoch-wise losses and accuracies
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -165,8 +160,6 @@ for opt_name, opt in optimizers.items():
             train_loss += loss.item() * inputs.size(0)
             train_corrects += torch.sum(preds == labels.data)
 
-        scheduler.step()
-
         model.eval()
         val_loss = 0.0
         val_corrects = 0
@@ -181,14 +174,16 @@ for opt_name, opt in optimizers.items():
                 loss = criterion(outputs, labels)
                 val_loss += loss.item() * inputs.size(0)
                 val_corrects += torch.sum(preds == labels.data)
+        
         train_loss = train_loss / len(train_data)
         val_loss = val_loss / len(val_data)
         train_acc = train_corrects.double() / len(train_data)
         val_acc = val_corrects.double() / len(val_data)
+        
+        scheduler.step(val_loss)
+        
         fpr, tpr, _ = roc_curve(labels_list, preds_list, pos_label=1)
         roc_auc = auc(fpr, tpr)
-        
-        
         
         # store ROC curve data for later plotting
         roc_curves[opt_name] = {"fpr": fpr, "tpr": tpr, "roc_auc": roc_auc}

@@ -97,8 +97,6 @@ class CustomModel(nn.Module):
 
     def forward(self, x, furnace_num):
         x = self.base_model(x)
-        #print(x.shape)  # Add this line
-        #print("Size after base model: ", x.size())  # Add this line
         x = torch.flatten(x, start_dim=1)
         x = torch.cat([x, furnace_num], dim=1)
         x = self.fc(x)
@@ -107,7 +105,7 @@ class CustomModel(nn.Module):
 model = CustomModel(model)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+model = model.to(device)  # Move model to device before defining optimizers
 
 #criterion = nn.CrossEntropyLoss()
 # Define the optimizers you want to compare
@@ -122,10 +120,6 @@ optimizers = {
 roc_curves = {}
 best_model_wts = None
 best_epoch = None
-best_epochs = {}
-
-# New dictionaries to store loss and accuracy for each optimizer
-train_losses_all, val_losses_all, train_accs_all, val_accs_all = {}, {}, {}, {}
 
 initial_model_weights = model.state_dict()  # save initial weights to reset the model before each optimizer
 
@@ -138,14 +132,11 @@ for opt_name, opt in optimizers.items():
     class_weights = torch.FloatTensor(weights).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = opt
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
 
     if torch.cuda.device_count() > 1:   
             print("Let's use", torch.cuda.device_count(), "GPUs!")
             model = nn.DataParallel(model)
-
-    # Now move the model to the device
-    model = model.to(device)
 
     # Lists for saving epoch-wise losses and accuracies
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -169,8 +160,6 @@ for opt_name, opt in optimizers.items():
             train_loss += loss.item() * inputs.size(0)
             train_corrects += torch.sum(preds == labels.data)
 
-        scheduler.step()
-
         model.eval()
         val_loss = 0.0
         val_corrects = 0
@@ -185,24 +174,25 @@ for opt_name, opt in optimizers.items():
                 loss = criterion(outputs, labels)
                 val_loss += loss.item() * inputs.size(0)
                 val_corrects += torch.sum(preds == labels.data)
+        
         train_loss = train_loss / len(train_data)
         val_loss = val_loss / len(val_data)
         train_acc = train_corrects.double() / len(train_data)
         val_acc = val_corrects.double() / len(val_data)
         
+        scheduler.step(val_loss)
+        
+        fpr, tpr, _ = roc_curve(labels_list, preds_list, pos_label=1)
+        roc_auc = auc(fpr, tpr)
+        
+        # store ROC curve data for later plotting
+        roc_curves[opt_name] = {"fpr": fpr, "tpr": tpr, "roc_auc": roc_auc}
+
         # Append to loss and accuracy lists
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_accs.append(train_acc)
         val_accs.append(val_acc)
-        
-        fpr, tpr, _ = roc_curve(labels_list, preds_list, pos_label=1)
-        roc_auc = auc(fpr, tpr)
-        
-        
-        
-        # store ROC curve data for later plotting
-        roc_curves[opt_name] = {"fpr": fpr, "tpr": tpr, "roc_auc": roc_auc}
 
         print(f'Epoch {epoch+1}/{10}')
         print(f'Train Loss: {train_loss:.4f} Acc: {train_acc:.4f}')
@@ -215,21 +205,6 @@ for opt_name, opt in optimizers.items():
             best_epoch = epoch + 1
             best_preds_list = preds_list
             best_labels_list = labels_list
-            
-        # Save the epoch with the best accuracy for this optimizer
-        best_epochs[opt_name] = best_epoch
-        
-        # Append to loss and accuracy lists
-        train_losses.append(train_loss)
-        val_losses.append(val_loss)
-        train_accs.append(train_acc)
-        val_accs.append(val_acc)
-        
-        # Save loss and accuracy for each optimizer
-        train_losses_all[opt_name] = train_losses
-        val_losses_all[opt_name] = val_losses
-        train_accs_all[opt_name] = train_accs
-        val_accs_all[opt_name] = val_accs
             
     # Store ROC curve data for the best model of each optimizer
     fpr, tpr, _ = roc_curve(best_labels_list, best_preds_list, pos_label=1)
@@ -272,23 +247,21 @@ plt.xlabel('Predicted label')
 plt.title('Confusion Matrix', size = 15)
 plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
 
-# Plotting the training and validation loss for all optimizers
+# Plotting the training and validation loss
 plt.figure(figsize=(10, 5))
 plt.title("Training and Validation Loss")
-for opt_name in optimizers.keys():
-    plt.plot(train_losses_all[opt_name], label=f'Training Loss - {opt_name}')
-    plt.plot(val_losses_all[opt_name], label=f'Validation Loss - {opt_name}')
+plt.plot(train_losses, label='Training Loss')
+plt.plot(val_losses, label='Validation Loss')
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.legend()
 plt.savefig(os.path.join(output_dir, 'loss_plot.png'))
 
-# Plotting the training and validation accuracy for all optimizers
+# Plotting the training and validation accuracy
 plt.figure(figsize=(10, 5))
 plt.title("Training and Validation Accuracy")
-for opt_name in optimizers.keys():
-    plt.plot(train_accs_all[opt_name], label=f'Training Accuracy - {opt_name}')
-    plt.plot(val_accs_all[opt_name], label=f'Validation Accuracy - {opt_name}')
+plt.plot(train_accs, label='Training Accuracy')
+plt.plot(val_accs, label='Validation Accuracy')
 plt.xlabel("Epochs")
 plt.ylabel("Accuracy")
 plt.legend()

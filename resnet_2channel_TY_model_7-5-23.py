@@ -12,7 +12,7 @@ import numpy as np
 import torch.nn as nn
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
-
+from sklearn.metrics import roc_curve, roc_auc_score
 
 # Generate a timestamp
 timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -57,15 +57,8 @@ class CustomImageFolder(Dataset):
         img2 = self.transform(Image.open(self.imgs[index][1]))
         img = torch.cat([img1, img2], dim=0)  # concatenate along the channel dimension
         label = self.labels[index]
-        furnace_num = torch.tensor([self.furnace_nums[index]], dtype=torch.float32)  # pass as tensor
+        furnace_num = torch.tensor([self.furnace_nums[index]], dtype=torch.long)  # pass as tensor
         return img, furnace_num, label
-
-
-# Define the path to the output directory
-output_dir = f'/data/wesley/2_data/model_outputs/TY/{timestamp}'
-
-# Create the output directory if it doesn't exist
-os.makedirs(output_dir, exist_ok=True)
 
 # Load the data
 train_data = CustomImageFolder('/data/wesley/2_data/train_test/TY/train', transform=transform)
@@ -110,13 +103,21 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define the loss function and the optimizer
 # For binary classification:
-weights = [0.6, 0.4]  # class 0 is "Passes" and class 1 is "Fails"
+weights = [0.83, 0.17]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 #criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adagrad(model.parameters(), lr=0.001)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+
+# Define the path to the output directory
+optimizer_name = "Adagrad"
+weights_str = '-'.join(str(w) for w in weights)  # convert weights to a string
+output_dir = f'/data/wesley/2_data/model_outputs/TY/713{optimizer_name}_{weights_str}_{timestamp}'
+
+# Create the output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
 
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -150,7 +151,9 @@ for epoch in range(10):  # 10 epochs, adjust as needed
 
     scheduler.step()
 
-    model.eval()
+    model.eval()  # set model to evaluation mode
+    val_scores = None
+    val_labels = None
     val_loss = 0.0
     val_corrects = 0
     with torch.no_grad():
@@ -161,6 +164,14 @@ for epoch in range(10):  # 10 epochs, adjust as needed
             loss = criterion(outputs, labels)
             val_loss += loss.item() * inputs.size(0)
             val_corrects += torch.sum(preds == labels.data)
+            scores = nn.functional.softmax(outputs, dim=1).cpu().numpy()  # calculate scores
+            if val_scores is None:
+                val_scores = scores
+                val_labels = labels.cpu().numpy()
+            else:
+                val_scores = np.vstack([val_scores, scores])
+                val_labels = np.hstack([val_labels, labels.cpu().numpy()])
+
 
     # Calculate average losses and accuracies
     train_loss = train_loss / len(train_data)
@@ -247,3 +258,22 @@ plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 plt.title(f'Confusion Matrix for Best Epoch ({best_epoch})', size = 15)
 plt.savefig(os.path.join(output_dir, f'confusion_matrix_best_{best_epoch}.png'))
+
+
+# calculate TPR, FPR, and AUC-ROC
+fpr, tpr, _ = roc_curve(val_labels, val_scores[:, 1], pos_label=1)  # 1 is the positive class
+roc_auc = roc_auc_score(val_labels, val_scores[:, 1])
+
+# Plotting ROC curve
+plt.figure()
+lw = 2  # line width
+plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')  # random classifier
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.savefig(os.path.join(output_dir, 'roc_plot.png'))  # save plot
+plt.show()
