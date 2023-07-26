@@ -1,0 +1,702 @@
+Crystal ID: 113150B_TX202202221304_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 20D1604_TX202209271103_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 40A160B_TX202208311301_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 40D160A_TX202210271350_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.007
+Confidence: Confident Pass
+
+Crystal ID: 10D1601_TX202209291413_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.016
+Confidence: Confident Pass
+
+Crystal ID: 20A160D_TX202208050806_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 105160C_TX202205201659_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 413150B_TX202203081321_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 40A160C_TX202209020902_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 111150B_TX202201180722_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 4041604_TX202205200738_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 40E1610_TX202212050958_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 112150D_TX202202010725_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 210160F_TX202211181257_Pass
+Human label: Pass
+Model label: Fail
+Model Probability: 0.578
+Confidence: Not confident
+
+Crystal ID: 2131502_TX202202210728_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.005
+Confidence: Confident Pass
+
+Crystal ID: 4051602_TX202206020740_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 1021601_TX202203300943_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 10A1609_TX202208250652_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.003
+Confidence: Confident Pass
+
+Crystal ID: 30D160B_TX202210041043_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 1041608_TX202205050834_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 204160C_TX202205060647_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.003
+Confidence: Confident Pass
+
+Crystal ID: 40C1605_TX202210130848_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.005
+Confidence: Confident Pass
+
+Crystal ID: 40E160B_TX202211301310_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.004
+Confidence: Confident Pass
+
+Crystal ID: 2101604_TX202211171327_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 207160E_TX202206210925_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 40B160F_TX202209221321_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 404160B_TX202205171016_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 1061601_TX202205261419_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3051605_TX202205231218_Pass
+Human label: Pass
+Model label: Fail
+Model Probability: 0.699
+Confidence: Not confident
+
+Crystal ID: 30F1606_TX202211140627_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 3121509_TX202203071408_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 305160A_TX202205250719_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 3121504_TX202203030736_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 3081606_TX202207100852_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 30B1603_TX202209070747_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.004
+Confidence: Confident Pass
+
+Crystal ID: 3041603_TX202205101007_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 4021601_TX202204041254_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2061608_TX202205311245_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 20C160C_TX202209120855_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 1111506_TX202201051022_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 10C1604_TX202209130710_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 40B1607_TX202209221015_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 10F160F_TX202211021156_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.009
+Confidence: Confident Pass
+
+Crystal ID: 30C1603_TX202209121410_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2071608_TX202206211232_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 10C1607_TX202209190844_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 4071611_TX202207191410_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 111150E_TX202201130904_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.013
+Confidence: Confident Pass
+
+Crystal ID: 402160F_TX202204050740_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.046
+Confidence: Confident Pass
+
+Crystal ID: 10A160B_TX202208171255_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 4061609_TX202206271052_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2101605_TX202211181025_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 4111502_TX202201190830_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.004
+Confidence: Confident Pass
+
+Crystal ID: 109160D_TX202207250737_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2101608_TX202211230945_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.017
+Confidence: Confident Pass
+
+Crystal ID: 30E150A_TX202201251000_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.005
+Confidence: Confident Pass
+
+Crystal ID: 40B1611_TX202209211213_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 40A160A_TX202209061031_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 306160D_TX202206091039_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.023
+Confidence: Confident Pass
+
+Crystal ID: 4111501_TX202201121026_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.023
+Confidence: Confident Pass
+
+Crystal ID: 4091603_TX202208240820_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 3051607_TX202205190732_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.212
+Confidence: Not confident
+
+Crystal ID: 1031609_TX202204201211_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.018
+Confidence: Confident Pass
+
+Crystal ID: 4091605_TX202208150826_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 20A1604_TX202208030906_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 20D1607_TX202209231343_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 1131504_TX202202070729_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.033
+Confidence: Confident Pass
+
+Crystal ID: 30B1606_TX202208251251_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 40F1601_TX202212151232_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.003
+Confidence: Confident Pass
+
+Crystal ID: 104160A_TX202205050645_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 2041603_TX202204271406_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 30F1602_TX202211100733_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 209160E_TX202207200850_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 207160B_TX202206170754_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 106160A_TX202207010713_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 10A160C_TX202208190940_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2061610_TX202205310636_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 407160A_TX202207140958_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3011603_TX202203170811_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2011604_TX202203101217_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2091601_TX202207151310_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 1091607_TX202207211050_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 40A1605_TX202209021238_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 305160D_TX202205261219_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.004
+Confidence: Confident Pass
+
+Crystal ID: 2091603_TX202207191051_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 2121507_TX202201281032_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 30E1610_TX202210240934_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 4111501_TX202201121102_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.020
+Confidence: Confident Pass
+
+Crystal ID: 2111505_TX202201200930_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 40B1610_TX202209230748_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 1101609_TX202211160744_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.004
+Confidence: Confident Pass
+
+Crystal ID: 40D1606_TX202210310820_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 307160D_TX202206230846_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.015
+Confidence: Confident Pass
+
+Crystal ID: 10B1601_TX202209011037_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 40D1610_TX202211011249_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 30F160F_TX202211140903_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 30D1608_TX202210040819_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3031602_TX202204280805_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 20B160D_TX202208291401_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 30D1610_TX202210111423_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.005
+Confidence: Confident Pass
+
+Crystal ID: 30D1605_TX202210110943_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 20F1610_TX202211090910_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 20C160A_TX202209071333_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 3121512_TX202203110646_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.002
+Confidence: Confident Pass
+
+Crystal ID: 412150A_TX202202150837_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.006
+Confidence: Confident Pass
+
+Crystal ID: 411150B_TX202201131227_Pass
+Human label: Pass
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3061606_TX202206071238_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3031601_TX202204221002_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3031607_TX202204281046_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.926
+Confidence: Confident Fail
+
+Crystal ID: 4011610_TX202203181228_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.815
+Confidence: Confident Fail
+
+Crystal ID: 2111605_TX202212151020_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.008
+Confidence: Confident Pass
+
+Crystal ID: 4111509_TX202201120916_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.563
+Confidence: Not confident
+
+Crystal ID: 1121606_TX202212271035_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.833
+Confidence: Confident Fail
+
+Crystal ID: 3111508_TX202202100656_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.904
+Confidence: Confident Fail
+
+Crystal ID: 10F1607_TX202211010858_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.301
+Confidence: Not confident
+
+Crystal ID: 4081602_TX202208010736_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.001
+Confidence: Confident Pass
+
+Crystal ID: 30E160F_TX202210191339_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.709
+Confidence: Not confident
+

@@ -111,7 +111,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define the loss function and the optimizer
 # For binary classification
-weights = [0.86, 0.14]  # class 0 is "Passes" and class 1 is "Fails"
+weights = [0.83, 0.17]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
@@ -291,37 +291,6 @@ with torch.no_grad():
         
 
 print(confusion_matrix)
-
-# save the final epoch log
-with open(os.path.join(output_dir, 'final_epoch_log.txt'), 'w') as f:
-    for crystal_id, human_label, model_label, model_probability, confidence in epoch_preds:
-        f.write(f'Crystal ID: {crystal_id}\n')
-        f.write(f'Human label: {human_label}\n')
-        f.write(f'Model label: {model_label}\n')
-        f.write(f'Model Probability: {model_probability:.3f}\n')
-        f.write(f'Confidence: {confidence}\n\n')
-
-# After the training loop, plot the pass histogram
-plt.figure(figsize=(12, 6))
-plt.hist(pass_probs, bins=20, alpha=0.5, color='#009999', label='Pass')
-plt.title('Pass Prediction Probabilities')
-plt.xlabel('Probability')
-plt.ylabel('Frequency')
-plt.legend(loc='upper right')
-plt.savefig(os.path.join(output_dir, 'final_pass_histogram.png'))
-plt.close()
-
-# After the training loop, plot the fail histogram
-plt.figure(figsize=(12, 6))
-plt.hist(fail_probs, bins=20, alpha=0.5, color='#ec6602', label='Fail')
-plt.title('Fail Prediction Probabilities')
-plt.xlabel('Probability')
-plt.ylabel('Frequency')
-plt.legend(loc='upper right')
-plt.savefig(os.path.join(output_dir, 'final_fail_histogram.png'))
-plt.close()
-
-print('Training complete. Best val Acc: {:4f}'.format(best_acc))
 
 # Delete all non-best model log files
 #for file in os.listdir(output_dir):

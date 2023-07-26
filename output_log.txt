@@ -1,0 +1,23 @@
+Crystal ID: 3031601_TX202204221002_Fail
+Human label: Fail
+Model label: Pass
+Model Probability: 0.000
+Confidence: Confident Pass
+
+Crystal ID: 3031607_TX202204281046_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.926
+Confidence: Confident Fail
+
+Crystal ID: 4111509_TX202201120916_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.563
+Confidence: Not confident
+
+Crystal ID: 3111508_TX202202100656_Fail
+Human label: Fail
+Model label: Fail
+Model Probability: 0.904
+Confidence: Confident Fail

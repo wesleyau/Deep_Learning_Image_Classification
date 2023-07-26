@@ -140,12 +140,19 @@ best_acc = 0.0  # Track best validation accuracy
 best_epoch = 0 # Track best epoch
 val_acc = 0.0 
 
-
 # Training loop
 for epoch in range(10):  # 10 epochs, adjust as needed
     model.train()  
     train_loss = 0.0
     train_corrects = 0
+    
+    # Initialize empty lists for training set prediction probabilities
+    train_pass_probs = []
+    train_fail_probs = []
+    
+    # Initialize empty list to store training set predictions and their associated data
+    train_epoch_preds = []
+    
     for inputs, furnace_nums, labels, crystal_ids in train_loader:
         inputs, furnace_nums, labels = inputs.to(device), furnace_nums.float().to(device), labels.to(device)
         optimizer.zero_grad()
@@ -156,6 +163,31 @@ for epoch in range(10):  # 10 epochs, adjust as needed
         optimizer.step()
         train_loss += loss.item() * inputs.size(0)
         train_corrects += torch.sum(preds == labels.data)
+
+        with torch.no_grad():
+            # Calculate prediction probabilities
+            scores = nn.functional.softmax(outputs, dim=1).cpu().numpy()
+
+        # Iterate over the scores and labels, appending the probabilities to the right list
+        for score, label in zip(scores, labels.cpu().numpy()):
+            if label == 0:  # class 'Pass'
+                train_pass_probs.append(score[0])
+            else:  # class 'Fail'
+                train_fail_probs.append(score[1])
+        
+        # Code to save probabilities for each crystal in the epoch
+        for j, score in enumerate(scores):
+            crystal_id = crystal_ids[j]  # get the crystal ID
+            human_label = 'Pass' if labels[j] == 0 else 'Fail'  # get the crystal label
+            model_label = 'Pass' if preds[j] == 0 else 'Fail'
+            model_probability = score[1]  # score for class 1 (Fail)
+            if model_probability > 0.80: # change thresholds as necessary
+                confidence = 'Confident Fail'
+            elif model_probability < 0.20: # change threshold as necessary
+                confidence = 'Confident Pass'
+            else:
+                confidence = 'Not confident'
+            train_epoch_preds.append((crystal_id, human_label, model_label, model_probability, confidence))
 
     scheduler.step()
 
@@ -214,6 +246,14 @@ for epoch in range(10):  # 10 epochs, adjust as needed
         if count != 1:
             print(f"Crystal {crystal} appears {count} times in the validation data.")
 
+    with open(os.path.join(output_dir, f'train_epoch_{epoch + 1}_log.txt'), 'a') as f:
+        for crystal_id, human_label, model_label, model_probability, confidence in train_epoch_preds:
+            f.write(f'Crystal ID: {crystal_id}\n')
+            f.write(f'Human label: {human_label}\n')
+            f.write(f'Model label: {model_label}\n')
+            f.write(f'Model Probability: {model_probability:.3f}\n')
+            f.write(f'Confidence: {confidence}\n\n')
+    
     with open(os.path.join(output_dir, f'epoch_{epoch + 1}_log.txt'), 'a') as f:
         for crystal_id, human_label, model_label, model_probability, confidence in epoch_preds:
             f.write(f'Crystal ID: {crystal_id}\n')
@@ -238,6 +278,25 @@ for epoch in range(10):  # 10 epochs, adjust as needed
     print(f'Train Loss: {train_loss:.4f} Acc: {train_acc:.4f}')
     print(f'Val Loss: {val_loss:.4f} Acc: {val_acc:.4f}')
 
+    plt.figure(figsize=(12, 6))
+    plt.hist(train_pass_probs, bins=20, alpha=0.5, color='#009999',)
+    plt.title('Training Pass Prediction Probabilities')
+    plt.xlabel('Probability')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, 'train_pass_histogram_epoch_{}.png'.format(epoch+1)))
+    plt.close()
+
+    # After the validation loop, plot the training set fail histogram
+    plt.figure(figsize=(12, 6))
+    plt.hist(train_fail_probs, bins=20, alpha=0.5, color='#ec6602',)
+    plt.title('Training Fail Prediction Probabilities')
+    plt.xlabel('Probability')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, 'train_fail_histogram_epoch_{}.png'.format(epoch+1)))
+    plt.close()
+    
     plt.figure(figsize=(12, 6))
     plt.hist(pass_probs, bins=20, alpha=0.5, color='#009999',)
     plt.title('Pass Prediction Probabilities')
@@ -291,6 +350,37 @@ with torch.no_grad():
         
 
 print(confusion_matrix)
+
+# save the final epoch log
+with open(os.path.join(output_dir, 'final_epoch_log.txt'), 'w') as f:
+    for crystal_id, human_label, model_label, model_probability, confidence in epoch_preds:
+        f.write(f'Crystal ID: {crystal_id}\n')
+        f.write(f'Human label: {human_label}\n')
+        f.write(f'Model label: {model_label}\n')
+        f.write(f'Model Probability: {model_probability:.3f}\n')
+        f.write(f'Confidence: {confidence}\n\n')
+
+# After the training loop, plot the pass histogram
+plt.figure(figsize=(12, 6))
+plt.hist(pass_probs, bins=20, alpha=0.5, color='#009999', label='Pass')
+plt.title('Pass Prediction Probabilities')
+plt.xlabel('Probability')
+plt.ylabel('Frequency')
+plt.legend(loc='upper right')
+plt.savefig(os.path.join(output_dir, 'final_pass_histogram.png'))
+plt.close()
+
+# After the training loop, plot the fail histogram
+plt.figure(figsize=(12, 6))
+plt.hist(fail_probs, bins=20, alpha=0.5, color='#ec6602', label='Fail')
+plt.title('Fail Prediction Probabilities')
+plt.xlabel('Probability')
+plt.ylabel('Frequency')
+plt.legend(loc='upper right')
+plt.savefig(os.path.join(output_dir, 'final_fail_histogram.png'))
+plt.close()
+
+print('Training complete. Best val Acc: {:4f}'.format(best_acc))
 
 # Delete all non-best model log files
 #for file in os.listdir(output_dir):
