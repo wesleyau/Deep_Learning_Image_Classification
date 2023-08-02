@@ -21,4 +21,4 @@ def match_and_collect_rows(file1, file2, output_file):
         f.writelines(output_lines)
 
 # Use the function
-match_and_collect_rows('review_names.txt', 'epoch_10_log.txt', 'output_log.txt')
+match_and_collect_rows('review_names.txt', '/data/wesley/2_data/final_model_outputs/TY/train_good/best_consistentAdagrad_0.83-0.17_2023-07-25_14-32-52/epoch_10_log.txt', 'TX_output_log.txt')

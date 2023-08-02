@@ -2,6 +2,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_structure
+from scipy.ndimage import measurements
+from skimage.segmentation import find_boundaries
+import cv2
+from scipy.ndimage import distance_transform_edt
+from scipy.ndimage import fourier_gaussian
+from scipy.fftpack import fftshift, ifftshift, fftn, ifftn
 
 # Specify the main directory path containing the subdirectories with .npy files
 main_directory = '/data/wesley/data_reflect/npz_folder/TX'
@@ -48,29 +54,52 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 iterations = 6  # Set a different number of iterations for Eres_image
             elif 'TC_image' in file_name:
                 iterations = 3  # Set a different number of iterations for TC_image
-                
+            
             dilated_mask = binary_dilation(mask, iterations=iterations, structure=structuring_element)  # Dilate the mask with the specified number of iterations and structuring element
             inverted_mask = np.logical_not(dilated_mask)  # Invert the mask
             masked_image = np.where(inverted_mask, masked_image, np.nan)  # Apply the inverted mask to the image
-            
+
             # Exclude values under a minimum threshold of 0.01
             masked_image[masked_image < 0.01] = np.nan
-            
-            # Add extra space around the crystal and make that a reflection of the edge of the crystal
-            reflection_padding_size = 10  # Adjust this value according to your needs
-            masked_image = np.pad(masked_image, pad_width=reflection_padding_size, mode='reflect')
-            
+
             # Find the non-zero indices in the array
-            non_zero_indices = np.nonzero(np.any(masked_image != 0, axis=-1))
-            
+            non_zero_indices = np.nonzero(np.isnan(masked_image) == False)
+
             # Check if non-zero pixels are found
             if len(non_zero_indices) > 0 and all(len(indices) > 0 for indices in non_zero_indices):
                 # Determine the cropping range based on the dimensions of the non-zero indices tuple
-                cropping_range = tuple(slice(np.min(indices), np.max(indices) + 1) for indices in non_zero_indices)
-    
+                #cropping_range = tuple(slice(np.min(indices), np.max(indices) + 1) for indices in non_zero_indices)
+                #I add +4 and -4 to the indices to remove the outter most pixel to make the sides of the crystal more straight for the reflection
+                cropping_range = tuple(slice(np.max([np.min(indices)+4, padding_size]), 
+                             np.min([np.max(indices) + 1-4, padded_image_array.shape[i] - padding_size])) 
+                       for i, indices in enumerate(non_zero_indices))
+                
                 # Crop the image array
                 cropped_image_array = masked_image[cropping_range]
 
+                # Add extra space around the crystal and make that a reflection of the edge of the crystal
+                reflection_padding_size = 30  # Adjust this value according to your needs
+                reflected_image = np.pad(cropped_image_array, pad_width=reflection_padding_size, mode='reflect')
+                
+                # Create a mask of valid (non-NaN) pixels
+                valid_mask = ~np.isnan(reflected_image)
+
+                # Compute the Euclidean distance transform
+                dist = distance_transform_edt(valid_mask)
+
+                # Interpolate only those NaN pixels within a certain distance of valid pixels
+                max_dist = 2  # You can change this distance depending on your requirements
+                interpolate_mask = (dist < max_dist) & ~valid_mask
+
+                # Interpolate the NaN pixels
+                # Use ravel_multi_index to convert 2D indices to 1D indices for use with np.interp and np.flat
+                interpolate_indices = np.ravel_multi_index(np.nonzero(interpolate_mask), reflected_image.shape)
+                valid_indices = np.ravel_multi_index(np.nonzero(valid_mask), reflected_image.shape)
+                interpolated_pixels = np.interp(interpolate_indices, valid_indices, reflected_image.flat[valid_indices])
+                reflected_image.flat[interpolate_indices] = interpolated_pixels
+                
+                cropped_image_array = reflected_image  # Assign back to cropped_image_array
+                
                 # Unpad after cropping
                 unpadded_cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
 
@@ -102,15 +131,15 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine vmin and vmax based on filename
                 vmin, vmax = None, None
                 if 'Co_image' in file_name:
-                    vmin, vmax = 116.7947781092469, 123.74717119370025
+                    vmin, vmax = 117.00452681142396, 124.62012818812553
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59.99483151311375, 65.26089135691268
                 elif 'Elin_image' in file_name:
                     vmin, vmax = 1.840720640553683, 1.980556323891534  # This may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
-                    vmin, vmax = 0.09108913339833097, 0.11929501748534238
+                    vmin, vmax = 0.07620497000875967, 0.12011394045368785
                 elif 'TC_image' in file_name:
-                    vmin, vmax = 0.9778910754450171, 1.030413229647149
+                    vmin, vmax = 00.9794049411014234, 1.032908229722682
                 else:
                     print(file_name + " does not contain any substring in the filename")  # Default values if no specific word is found
                 
@@ -140,5 +169,11 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 #bbox_inches='tight', 
                 plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
                 plt.close(fig)
+                
+                # Apply Gaussian high pass filter
+                # Convert to Fourier space
+                fourier_image = fftshift(fftn(cropped_image_array))
+                
+                
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")

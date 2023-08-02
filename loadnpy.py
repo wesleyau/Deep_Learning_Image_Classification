@@ -11,12 +11,15 @@ import math
 import glob
 
 
-path_to_files = "/data/wesley/"  
+path_to_files = "/data/wesley/shrut/data"  
 dir_list = os.listdir(path_to_files)
 print(dir_list)
 print(os.getcwd())
 
-npz = np.load('../TX202201041204_TX202201041303.npz')
+npz = np.load('/data/wesley/shrut/data/CTAC_update_094.npz')
+image = plt.imshow(npz['data'][0,:,:,120].squeeze())
+plt.show()
+break
 print(npz.files)
 print(npz['Co_image'].shape)
 print(npz['Co_image'])

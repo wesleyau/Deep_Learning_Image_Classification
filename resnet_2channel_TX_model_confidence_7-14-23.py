@@ -14,6 +14,8 @@ from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 from sklearn.metrics import roc_curve, roc_auc_score
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Generate a timestamp
 timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -36,14 +38,14 @@ class CustomImageFolder(Dataset):
         classes = ['Pass', 'Fail']  # assuming these are the only two classes
         for i, class_ in enumerate(classes):
             class_dir = os.path.join(root_dir, class_)
-            print(f'Class directory: {class_dir}')  
+            #print(f'Class directory: {class_dir}')  
             crystals = [entry.name for entry in os.scandir(class_dir) if not entry.is_symlink()]
-            print(f'Found crystals: {crystals}')  # And this line
+            #print(f'Found crystals: {crystals}')  # And this line
             for crystal in crystals:
                 if crystal not in self.crystal_count: 
                     self.crystal_count[crystal] = 0
                 self.crystal_count[crystal] += 1
-                print(f'Processing crystal folder: {crystal} - Status: {class_}')
+                #print(f'Processing crystal folder: {crystal} - Status: {class_}')
                 furnace_num = int(crystal[0])  # extract first character as furnace number
                 crystal_dir = os.path.join(class_dir, crystal)
                 imgs = []
@@ -107,12 +109,13 @@ class CustomModel(nn.Module):
 
 model = CustomModel(model)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Define the loss function and the optimizer
-# For binary classification
-weights = [0.90, 0.1]  # class 0 is "Passes" and class 1 is "Fails"
+if torch.cuda.device_count() > 1:
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    model = nn.DataParallel(model)
+    
+weights = [0.83, 0.17]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
+model = model.to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 #criterion = nn.CrossEntropyLoss()
@@ -127,11 +130,6 @@ output_dir = f'/data/wesley/2_data/new_model_outputs/TX/PCON{optimizer_name}_{we
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-    model = nn.DataParallel(model)
-    
-model = model.to(device)
 
 # Lists for saving epoch-wise losses and accuracies
 train_losses, val_losses, train_accs, val_accs = [], [], [], []

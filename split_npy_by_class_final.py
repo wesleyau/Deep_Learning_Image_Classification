@@ -10,10 +10,10 @@ import numpy as np
 # I usually use unix to move the npz folders into their own directory outside of the tx and ty folders
 
 # Define the source directory containing the .npz folders
-source_directory = "/data/wesley/data_reflect/npz_folder/TY"
+source_directory = "/data/wesley/3_data_7_31_23/npz_folder/TY"
 
 # Define the destination directory where the .npy files will be moved
-destination_directory = "/data/wesley/data_reflect/npz_folder/TY"
+destination_directory = "/data/wesley/3_data_7_31_23/npz_folder/TY"
 
 # Iterate over the .npz folders in the source directory
 for npz_folder in os.listdir(source_directory):

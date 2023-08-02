@@ -109,10 +109,15 @@ model = CustomModel(model)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+if torch.cuda.device_count() > 1:
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    model = nn.DataParallel(model)
+
 # Define the loss function and the optimizer
 # For binary classification
 weights = [0.83, 0.17]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
+model = model.to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 #criterion = nn.CrossEntropyLoss()
@@ -127,11 +132,6 @@ output_dir = f'/data/wesley/2_data/final_model_outputs/TX/consistent{optimizer_n
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-    model = nn.DataParallel(model)
-    
-model = model.to(device)
 
 # Lists for saving epoch-wise losses and accuracies
 train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -318,7 +318,9 @@ plt.savefig(os.path.join(output_dir, 'loss_plot.png'))
 # Plotting the training and validation accuracy
 plt.figure(figsize=(10, 5))
 plt.title("Training and Validation Accuracy")
-plt.plot(train_accs, label='Training Accuracy')
+train_accs_np = [t.cpu().numpy() for t in train_accs]
+plt.plot(train_accs_np, label='Training Accuracy')
+val_accs = [item.cpu().numpy() for item in val_accs]
 plt.plot(val_accs, label='Validation Accuracy')
 plt.xlabel("Epochs")
 plt.ylabel("Accuracy")

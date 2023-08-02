@@ -109,10 +109,15 @@ model = CustomModel(model)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+if torch.cuda.device_count() > 1:
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    model = nn.DataParallel(model)
+
 # Define the loss function and the optimizer
 # For binary classification
 weights = [0.87, 0.13]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
+model = model.to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 #criterion = nn.CrossEntropyLoss()
@@ -127,11 +132,6 @@ output_dir = f'/data/wesley/2_data/new_model_outputs/TY/{optimizer_name}_{weight
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-if torch.cuda.device_count() > 1:
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-    model = nn.DataParallel(model)
-    
-model = model.to(device)
 
 # Lists for saving epoch-wise losses and accuracies
 train_losses, val_losses, train_accs, val_accs = [], [], [], []

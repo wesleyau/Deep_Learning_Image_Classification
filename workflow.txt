@@ -2,8 +2,8 @@
 mv *.npz ../npz_folder
 
 2. Seperate the TX and TY Machines, put them in their own folder using unix
-mv TX* ./TX
-mv TY* ./TY
+mv *TX* ./TX
+mv *TY* ./TY
 
 3. Run split_npy_by_class-final.py for each of the TX and TY Machines
 
