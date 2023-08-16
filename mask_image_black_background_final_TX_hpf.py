@@ -74,28 +74,10 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 cropped_image_array = masked_image[cropping_range]
                 
                 hp_cropped_image_array = cropped_image_array
-
-                # Create a mask of valid (non-NaN) pixels
-                valid_mask = ~np.isnan(hp_cropped_image_array)
-
-                # Compute the Euclidean distance transform
-                dist = distance_transform_edt(valid_mask)
-
-                # Interpolate only those NaN pixels within a certain distance of valid pixels
-                max_dist = 2  # You can change this distance depending on your requirements
-                interpolate_mask = (dist < max_dist) & ~valid_mask
-
-                # Interpolate the NaN pixels
-                # Use ravel_multi_index to convert 2D indices to 1D indices for use with np.interp and np.flat
-                interpolate_indices = np.ravel_multi_index(np.nonzero(interpolate_mask), hp_cropped_image_array.shape)
-                valid_indices = np.ravel_multi_index(np.nonzero(valid_mask), hp_cropped_image_array.shape)
-                interpolated_pixels = np.interp(interpolate_indices, valid_indices, hp_cropped_image_array.flat[valid_indices])
-                hp_cropped_image_array.flat[interpolate_indices] = interpolated_pixels
                         
                 # Unpad after cropping
                 unpadded_cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
 
-                
                 # Get the relative path of the file within the main directory
                 relative_path = os.path.relpath(file_path, main_directory)
                 
@@ -160,8 +142,25 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
                 #bbox_inches='tight', 
-                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
+                
+                # Create a mask of valid (non-NaN) pixels
+                valid_mask = ~np.isnan(hp_cropped_image_array)
+
+                # Compute the Euclidean distance transform
+                dist = distance_transform_edt(valid_mask)
+
+                # Interpolate only those NaN pixels within a certain distance of valid pixels
+                max_dist = 2  # You can change this distance depending on your requirements
+                interpolate_mask = (dist < max_dist) & ~valid_mask
+
+                # Interpolate the NaN pixels
+                # Use ravel_multi_index to convert 2D indices to 1D indices for use with np.interp and np.flat
+                interpolate_indices = np.ravel_multi_index(np.nonzero(interpolate_mask), hp_cropped_image_array.shape)
+                valid_indices = np.ravel_multi_index(np.nonzero(valid_mask), hp_cropped_image_array.shape)
+                interpolated_pixels = np.interp(interpolate_indices, valid_indices, hp_cropped_image_array.flat[valid_indices])
+                hp_cropped_image_array.flat[interpolate_indices] = interpolated_pixels
                 
                 # Apply Gaussian high pass filter
                 # Convert to Fourier space
@@ -169,7 +168,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 
                 # Apply a Gaussian low-pass filter in the Fourier domain
                 # The higher this value, the more low frequency components are removed
-                sigma = 10  # Modify this according to your requirements
+                sigma = 5  # Modify this according to your requirements
                 low_pass = fourier_gaussian(fourier_image, sigma=sigma)
                 
                 # Convert back to the spatial domain
@@ -190,7 +189,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 ax.axis('off')
                 ax.autoscale(tight=True)
                 ax.set_facecolor('black')
-                plt.savefig(high_pass_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(high_pass_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
 
             else:

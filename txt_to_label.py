@@ -1,9 +1,9 @@
 import os
 import shutil
 
-text_file_path = "/data/wesley/2_data/npz_folder/2channel_labels.txt"
-source_directory = "/data/wesley/2_data/npz_folder/TY"
-target_directory = "/data/wesley/2_data/npz_folder/TY_dataset"
+text_file_path = "/data/wesley/3_data_7_31_23/2021_2023_labels.txt"
+source_directory = "/data/wesley/3_data_7_31_23/npz_folder_reflect/TY"
+target_directory = "/data/wesley/3_data_7_31_23/TY_reflect_dataset"
 
 # Read the text file
 with open(text_file_path, 'r') as file:

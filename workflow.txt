@@ -15,9 +15,14 @@ mv *TY* ./TY
 
 6. run PCA_vim_vmax.py and K-S test.py on both raw and masked .npy files to see if they can be combined (probably not though)
 
-7 use txt_to_label.py to take the pngs and move them into their specific crystal folders 
+7 use txt_to_label.py to take the pngs and move them into their specific crystal folders - the txt file nees to have 3 columns id, dicom, label - i have an example in the shared folder
+If you find that you are not getting the same number of folders as you should be, you have duplicate labels. Delete duplicates with the delte duplicate function in excel
 
-8. use split_train_test.py to split dataset into train and test datasets
-mv /data/wesley/data2_6-27-23/TX_dataset/*Unlabeled /data/wesley/data2_6-27-23/TX_dataset_unlabeled
-mv /data/wesley/data2_6-27-23/TY_dataset/*Unlabeled /data/wesley/data2_6-27-23/TY_dataset_unlabeled
+8. Move unlabeled data to anothe folder and then Split the folders into pass and fail folders
+mv /data/wesley/3_data_7_31_23/TX_reflect_dataset/*Unlabeled /data/wesley/3_data_7_31_23/unlabeled/tx_reflection
+mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Pass /data/wesley/3_data_7_31_23/TY_reflect_dataset/Pass
+mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Fail /data/wesley/3_data_7_31_23/TY_reflect_dataset/Fail
+mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Fail /data/wesley/3_data_7_31_23/TX_reflect_dataset/Fail
+
+9. use split_train_val_test.py to split dataset into train and test datasets. I downsampled the passes because there are alot of passes. So I made the ratio 3:1 pass to fails
 

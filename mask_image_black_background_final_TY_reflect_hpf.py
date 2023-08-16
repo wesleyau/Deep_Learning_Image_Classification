@@ -10,7 +10,7 @@ from scipy.ndimage import fourier_gaussian
 from scipy.fftpack import fftshift, ifftshift, fftn, ifftn
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/data_reflect/npz_folder/TY'
+main_directory = '/data/wesley/3_data_7_31_23/npz_folder_reflect/TY'
 
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -70,15 +70,15 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine the cropping range based on the dimensions of the non-zero indices tuple
                 #cropping_range = tuple(slice(np.min(indices), np.max(indices) + 1) for indices in non_zero_indices)
                 #I add +4 and -4 to the indices to remove the outter most pixel to make the sides of the crystal more straight for the reflection
-                cropping_range = tuple(slice(np.max([np.min(indices)+4, padding_size]), 
-                             np.min([np.max(indices) + 1-4, padded_image_array.shape[i] - padding_size])) 
+                cropping_range = tuple(slice(np.max([np.min(indices)+3, padding_size]), 
+                             np.min([np.max(indices) + 1-3, padded_image_array.shape[i] - padding_size])) 
                        for i, indices in enumerate(non_zero_indices))
                 
                 # Crop the image array
                 cropped_image_array = masked_image[cropping_range]
 
                 # Add extra space around the crystal and make that a reflection of the edge of the crystal
-                reflection_padding_size = 30  # Adjust this value according to your needs
+                reflection_padding_size = 15  # Adjust this value according to your needs
                 reflected_image = np.pad(cropped_image_array, pad_width=reflection_padding_size, mode='reflect')
                 
                 # Create a mask of valid (non-NaN) pixels
@@ -131,15 +131,15 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine vmin and vmax based on filename
                 vmin, vmax = None, None
                 if 'Co_image' in file_name:
-                    vmin, vmax = 116.36538997789857, 123.5873231832517
+                    vmin, vmax = 116.36538997789857, 124.32511614639317
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59.99483151311375, 65.26089135691268
                 elif 'Elin_image' in file_name:
                     vmin, vmax = 1.840720640553683, 1.980556323891534  # This may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
-                    vmin, vmax = 0.07705189479517403, 0.12010585273252103
+                    vmin, vmax = 0.09194944759295991, 0.1110547720599848
                 elif 'TC_image' in file_name:
-                    vmin, vmax = 0.9625918840019665, 1.0476702829489846
+                    vmin, vmax = 0.9858160413738021, 1.0229458841019003
                 else:
                     print(file_name + " does not contain any substring in the filename")  # Default values if no specific word is found
                 
@@ -167,7 +167,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
                 #bbox_inches='tight', 
-                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
                 
                 # Apply Gaussian high pass filter
@@ -176,7 +176,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 
                 # Apply a Gaussian low-pass filter in the Fourier domain
                 # The higher this value, the more low frequency components are removed
-                sigma = 20  # Modify this according to your requirements
+                sigma = 5  # Modify this according to your requirements
                 low_pass = fourier_gaussian(fourier_image, sigma=sigma)
                 
                 # Convert back to the spatial domain
@@ -197,7 +197,7 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 ax.axis('off')
                 ax.autoscale(tight=True)
                 ax.set_facecolor('black')
-                plt.savefig(high_pass_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(high_pass_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")

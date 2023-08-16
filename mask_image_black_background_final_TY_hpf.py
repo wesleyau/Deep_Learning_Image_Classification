@@ -10,7 +10,7 @@ from scipy.ndimage import fourier_gaussian
 from scipy.fftpack import fftshift, ifftshift, fftn, ifftn
 
 # Specify the main directory path containing the subdirectories with .npy files
-main_directory = '/data/wesley/3_data_7_31_23/npz_folder/TY'
+main_directory = '/data/wesley/3_data_7_31_23/npz_folder/TY/Co_image'
 
 # Padding parameters
 padding_size = 1  # Size of the border extension
@@ -63,27 +63,28 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
             masked_image[masked_image < 0.01] = np.nan
             
             # Find the non-zero indices in the array
-            non_zero_indices = np.nonzero(np.any(masked_image != 0, axis=-1))
+            non_zero_indices = np.nonzero(np.isnan(masked_image) == False)
             
             # Check if non-zero pixels are found
             if len(non_zero_indices) > 0 and all(len(indices) > 0 for indices in non_zero_indices):
-                # Determine the cropping range based on the dimensions of the non-zero indices tuple
+                # Determine the cropping range
                 cropping_range = tuple(slice(np.min(indices), np.max(indices) + 1) for indices in non_zero_indices)
-    
+                    
                 # Crop the image array
                 cropped_image_array = masked_image[cropping_range]
                 
-                # If the image is Eres_image or Elin_image, remove padding
-                if 'Eres_image' in file_name or 'Elin_image' in file_name:
-                    cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
-                    
+                hp_cropped_image_array = cropped_image_array
+
+                # Unpad after cropping
+                unpadded_cropped_image_array = cropped_image_array[padding_size:-padding_size, padding_size:-padding_size]
+
                 # Get the relative path of the file within the main directory
                 relative_path = os.path.relpath(file_path, main_directory)
                 
                 # Get the directory path within the main directory
                 save_directory = os.path.dirname(os.path.join(main_directory, relative_path))
     
-                # Extract the image class from the fil#bbox_inches='tight', name
+                # Extract the image class from the filename
                 image_class = ''
                 if 'Co_image' in file_name:
                     image_class = 'Co'
@@ -105,15 +106,15 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 # Determine vmin and vmax based on filename
                 vmin, vmax = None, None
                 if 'Co_image' in file_name:
-                    vmin, vmax = 116.36538997789857, 123.5873231832517
+                    vmin, vmax = 116.36538997789857, 124.32511614639317
                 elif 'Am_image' in file_name:
                     vmin, vmax = 59.99483151311375, 65.26089135691268
                 elif 'Elin_image' in file_name:
                     vmin, vmax = 1.840720640553683, 1.980556323891534  # This may need to be fiddled with, this image is most variable between the tx and ty machines
                 elif 'Eres_image' in file_name:
-                    vmin, vmax = 0.07705189479517403, 0.12010585273252103
+                    vmin, vmax = 0.09194944759295991, 0.1110547720599848
                 elif 'TC_image' in file_name:
-                    vmin, vmax = 0.9625918840019665, 1.0476702829489846
+                    vmin, vmax = 0.9858160413738021, 1.0229458841019003
                 else:
                     print(file_name + " does not contain any substring in the filename")  # Default values if no specific word is found
                 
@@ -141,23 +142,40 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 cropped_png_file_name = f"masked_{file_name[:-4]}.png"
                 cropped_png_file_path = os.path.join(cropped_png_directory, cropped_png_file_name)
                 #bbox_inches='tight', 
-                plt.savefig(cropped_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(cropped_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
+                
+                # Create a mask of valid (non-NaN) pixels
+                valid_mask = ~np.isnan(hp_cropped_image_array)
+
+                # Compute the Euclidean distance transform
+                dist = distance_transform_edt(valid_mask)
+
+                # Interpolate only those NaN pixels within a certain distance of valid pixels
+                max_dist = 2  # You can change this distance depending on your requirements
+                interpolate_mask = (dist < max_dist) & ~valid_mask
+
+                # Interpolate the NaN pixels
+                # Use ravel_multi_index to convert 2D indices to 1D indices for use with np.interp and np.flat
+                interpolate_indices = np.ravel_multi_index(np.nonzero(interpolate_mask), hp_cropped_image_array.shape)
+                valid_indices = np.ravel_multi_index(np.nonzero(valid_mask), hp_cropped_image_array.shape)
+                interpolated_pixels = np.interp(interpolate_indices, valid_indices, hp_cropped_image_array.flat[valid_indices])
+                hp_cropped_image_array.flat[interpolate_indices] = interpolated_pixels
                 
                 # Apply Gaussian high pass filter
                 # Convert to Fourier space
-                fourier_image = fftshift(fftn(cropped_image_array))
+                fourier_image = fftshift(fftn(hp_cropped_image_array))
                 
                 # Apply a Gaussian low-pass filter in the Fourier domain
                 # The higher this value, the more low frequency components are removed
-                sigma = 20  # Modify this according to your requirements
+                sigma = 5  # Modify this according to your requirements
                 low_pass = fourier_gaussian(fourier_image, sigma=sigma)
                 
                 # Convert back to the spatial domain
                 low_pass = np.real(ifftn(ifftshift(low_pass)))
                 
                 # Subtract the low-pass filtered image from the original image to get a high-pass filtered image
-                high_pass = cropped_image_array - low_pass
+                high_pass = hp_cropped_image_array - low_pass
                 
                 # Save the high-pass filtered image
                 high_pass_png_directory = os.path.join(save_directory, 'high_pass_png_' + image_class)
@@ -171,7 +189,8 @@ for dirpath, dirnames, filenames in os.walk(main_directory):
                 ax.axis('off')
                 ax.autoscale(tight=True)
                 ax.set_facecolor('black')
-                plt.savefig(high_pass_png_file_path, dpi='figure', bbox_inches='tight', pad_inches=0, facecolor='black')
+                plt.savefig(high_pass_png_file_path, dpi='figure', pad_inches=0, facecolor='black')
                 plt.close(fig)
+
             else:
                 print(f"No non-zero pixels found in {file_name}. Skipping...")
