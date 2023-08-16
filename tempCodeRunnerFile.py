@@ -13,6 +13,7 @@ import torch.nn as nn
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 from sklearn.metrics import roc_curve, roc_auc_score
+import csv
 
 # Generate a timestamp
 timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -52,8 +53,8 @@ class CustomImageFolder(Dataset):
                         img_path = os.path.join(crystal_dir, img_name)
                         imgs.append(img_path)
                 # Group every two images together
-                for j in range(0, len(imgs), 2):
-                    self.imgs.append([imgs[j], imgs[j + 1]])
+                for j in range(0, len(imgs), 3):
+                    self.imgs.append([imgs[j], imgs[j + 1], imgs[j + 2]])
                     self.labels.append(i)  # assign label based on class
                     self.furnace_nums.append(furnace_num)
                     self.crystal_ids.append(crystal)  # store crystal ID
@@ -64,25 +65,28 @@ class CustomImageFolder(Dataset):
     def __getitem__(self, index):
         img1 = self.transform(Image.open(self.imgs[index][0]))
         img2 = self.transform(Image.open(self.imgs[index][1]))
-        img = torch.cat([img1, img2], dim=0)  # concatenate along the channel dimension
+        img3 = self.transform(Image.open(self.imgs[index][2]))   # Load the third image
+        img = torch.cat([img1, img2, img3], dim=0)  # concatenate along the channel dimension
         label = self.labels[index]
         furnace_num = torch.tensor([self.furnace_nums[index]], dtype=torch.long)  # pass as tensor
         crystal_id = self.crystal_ids[index]  # get the crystal ID
         return img, furnace_num, label, crystal_id  # return the crystal ID along with the other data
 
 # Load the data
-train_data = CustomImageFolder('/data/wesley/2_data/train_test/TX/train', transform=transform)
-val_data = CustomImageFolder('/data/wesley/2_data/train_test/TX/val', transform=transform)
+train_data = CustomImageFolder('/data/wesley/3_data_7_31_23/train_test_reflection/TX/train', transform=transform)
+val_data = CustomImageFolder('/data/wesley/3_data_7_31_23/train_test_reflection/TX/val', transform=transform)
+#test_data = CustomImageFolder('/data/wesley/3_data_7_31_23/train_test_reflection/TX/test', transform=transform)
 
 # Data loaders
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=32, shuffle=False)
+#test_loader = DataLoader(test_data, batch_size=32, shuffle=False)
 
 # Define the model
 model = models.resnet50(weights=models.resnet.ResNet50_Weights.IMAGENET1K_V1)
 
-# Change the first layer to accept the two-channel images
-model.conv1 = nn.Conv2d(2, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+# Change the first layer to accept the three-channel images
+model.conv1 = nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 
 # Change the last layer to accept the furnace number along with the CNN features
 num_ftrs = model.fc.in_features
@@ -112,14 +116,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     model = nn.DataParallel(model)
+    
+model = model.to(device)
 
 # Define the loss function and the optimizer
 # For binary classification
-weights = [0.83, 0.17]  # class 0 is "Passes" and class 1 is "Fails"
+weights = [0.7, 0.3]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
-model = model.to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
+# Define the loss function and the optimizer/data/wesley/2_data/train_test/TX
 #criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adagrad(model.parameters(), lr=0.001)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
@@ -127,11 +133,10 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 # Define the path to the output directory
 optimizer_name = "Adagrad"
 weights_str = '-'.join(str(w) for w in weights)  # convert weights to a string
-output_dir = f'/data/wesley/2_data/final_model_outputs/TX/consistent{optimizer_name}_{weights_str}_{timestamp}'
+output_dir = f'/data/wesley/3_data_7_31_23/model_outputs_reflection/TX/{optimizer_name}_{weights_str}_{timestamp}'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
-
 
 # Lists for saving epoch-wise losses and accuracies
 train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -140,12 +145,19 @@ best_acc = 0.0  # Track best validation accuracy
 best_epoch = 0 # Track best epoch
 val_acc = 0.0 
 
-
 # Training loop
 for epoch in range(10):  # 10 epochs, adjust as needed
     model.train()  
     train_loss = 0.0
     train_corrects = 0
+    
+    # Initialize empty lists for training set prediction probabilities
+    train_pass_probs = []
+    train_fail_probs = []
+    
+    # Initialize empty list to store training set predictions and their associated data
+    train_epoch_preds = []
+    
     for inputs, furnace_nums, labels, crystal_ids in train_loader:
         inputs, furnace_nums, labels = inputs.to(device), furnace_nums.float().to(device), labels.to(device)
         optimizer.zero_grad()
@@ -156,6 +168,31 @@ for epoch in range(10):  # 10 epochs, adjust as needed
         optimizer.step()
         train_loss += loss.item() * inputs.size(0)
         train_corrects += torch.sum(preds == labels.data)
+
+        with torch.no_grad():
+            # Calculate prediction probabilities
+            scores = nn.functional.softmax(outputs, dim=1).cpu().numpy()
+
+        # Iterate over the scores and labels, appending the probabilities to the right list
+        for score, label in zip(scores, labels.cpu().numpy()):
+            if label == 0:  # class 'Pass'
+                train_pass_probs.append(score[0])
+            else:  # class 'Fail'
+                train_fail_probs.append(score[1])
+        
+        # Code to save probabilities for each crystal in the epoch
+        for j, score in enumerate(scores):
+            crystal_id = crystal_ids[j]  # get the crystal ID
+            human_label = 'Pass' if labels[j] == 0 else 'Fail'  # get the crystal label
+            model_label = 'Pass' if preds[j] == 0 else 'Fail'
+            model_probability = score[1]  # score for class 1 (Fail)
+            if model_probability > 0.80: # change thresholds as necessary
+                confidence = 'Confident Fail'
+            elif model_probability < 0.20: # change threshold as necessary
+                confidence = 'Confident Pass'
+            else:
+                confidence = 'Not confident'
+            train_epoch_preds.append((crystal_id, human_label, model_label, model_probability, confidence))
 
     scheduler.step()
 
@@ -214,13 +251,23 @@ for epoch in range(10):  # 10 epochs, adjust as needed
         if count != 1:
             print(f"Crystal {crystal} appears {count} times in the validation data.")
 
-    with open(os.path.join(output_dir, f'epoch_{epoch + 1}_log.txt'), 'a') as f:
+    # For the train epoch logs
+    with open(os.path.join(output_dir, f'train_epoch_{epoch + 1}_log.csv'), 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        # Write header only once, i.e., when the file is created
+        if epoch == 0:
+            writer.writerow(['Crystal ID', 'Human label', 'Model label', 'Model Probability', 'Confidence'])
+        for crystal_id, human_label, model_label, model_probability, confidence in train_epoch_preds:
+            writer.writerow([crystal_id, human_label, model_label, f"{model_probability:.3f}", confidence])
+
+    # For the general epoch logs
+    with open(os.path.join(output_dir, f'epoch_{epoch + 1}_log.csv'), 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        # Write header only once, i.e., when the file is created
+        if epoch == 0:
+            writer.writerow(['Crystal ID', 'Human label', 'Model label', 'Model Probability', 'Confidence'])
         for crystal_id, human_label, model_label, model_probability, confidence in epoch_preds:
-            f.write(f'Crystal ID: {crystal_id}\n')
-            f.write(f'Human label: {human_label}\n')
-            f.write(f'Model label: {model_label}\n')
-            f.write(f'Model Probability: {model_probability:.3f}\n')
-            f.write(f'Confidence: {confidence}\n\n')
+            writer.writerow([crystal_id, human_label, model_label, f"{model_probability:.3f}", confidence])
             
     # Calculate average losses and accuracies
     train_loss = train_loss / len(train_data)
@@ -238,6 +285,25 @@ for epoch in range(10):  # 10 epochs, adjust as needed
     print(f'Train Loss: {train_loss:.4f} Acc: {train_acc:.4f}')
     print(f'Val Loss: {val_loss:.4f} Acc: {val_acc:.4f}')
 
+    plt.figure(figsize=(12, 6))
+    plt.hist(train_pass_probs, bins=20, alpha=0.5, color='#009999',)
+    plt.title('Training Pass Prediction Probabilities')
+    plt.xlabel('Probability')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, 'train_pass_histogram_epoch_{}.png'.format(epoch+1)))
+    plt.close()
+
+    # After the validation loop, plot the training set fail histogram
+    plt.figure(figsize=(12, 6))
+    plt.hist(train_fail_probs, bins=20, alpha=0.5, color='#ec6602',)
+    plt.title('Training Fail Prediction Probabilities')
+    plt.xlabel('Probability')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, 'train_fail_histogram_epoch_{}.png'.format(epoch+1)))
+    plt.close()
+    
     plt.figure(figsize=(12, 6))
     plt.hist(pass_probs, bins=20, alpha=0.5, color='#009999',)
     plt.title('Pass Prediction Probabilities')
@@ -292,6 +358,35 @@ with torch.no_grad():
 
 print(confusion_matrix)
 
+# For the final epoch log
+with open(os.path.join(output_dir, 'final_epoch_log.csv'), 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['Crystal ID', 'Human label', 'Model label', 'Model Probability', 'Confidence'])
+    for crystal_id, human_label, model_label, model_probability, confidence in epoch_preds:
+        writer.writerow([crystal_id, human_label, model_label, f"{model_probability:.3f}", confidence])
+
+# After the training loop, plot the pass histogram
+plt.figure(figsize=(12, 6))
+plt.hist(pass_probs, bins=20, alpha=0.5, color='#009999', label='Pass')
+plt.title('Pass Prediction Probabilities')
+plt.xlabel('Probability')
+plt.ylabel('Frequency')
+plt.legend(loc='upper right')
+plt.savefig(os.path.join(output_dir, 'final_pass_histogram.png'))
+plt.close()
+
+# After the training loop, plot the fail histogram
+plt.figure(figsize=(12, 6))
+plt.hist(fail_probs, bins=20, alpha=0.5, color='#ec6602', label='Fail')
+plt.title('Fail Prediction Probabilities')
+plt.xlabel('Probability')
+plt.ylabel('Frequency')
+plt.legend(loc='upper right')
+plt.savefig(os.path.join(output_dir, 'final_fail_histogram.png'))
+plt.close()
+
+print('Training complete. Best val Acc: {:4f}'.format(best_acc))
+
 # Delete all non-best model log files
 #for file in os.listdir(output_dir):
 #    if file.endswith('_log.txt'):
@@ -314,18 +409,6 @@ plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.legend()
 plt.savefig(os.path.join(output_dir, 'loss_plot.png'))
-
-# Plotting the training and validation accuracy
-plt.figure(figsize=(10, 5))
-plt.title("Training and Validation Accuracy")
-train_accs_np = [t.cpu().numpy() for t in train_accs]
-plt.plot(train_accs_np, label='Training Accuracy')
-val_accs = [item.cpu().numpy() for item in val_accs]
-plt.plot(val_accs, label='Validation Accuracy')
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy")
-plt.legend()
-plt.savefig(os.path.join(output_dir, 'acc_plot.png'))
 
 #save best confusion matrix
 plt.figure(figsize=(10,10))
@@ -352,3 +435,17 @@ plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.savefig(os.path.join(output_dir, 'roc_plot.png'))  # save plot
 plt.show()
+
+#if isinstance(train_accs, torch.Tensor):
+#    train_accs = train_accs.cpu().numpy()
+
+# Plotting the training and validation accuracy
+#plt.figure(figsize=(10, 5))
+#plt.title("Training and Validation Accuracy")
+#plt.plot(train_accs, label='Training Accuracy')
+#plt.plot(val_accs.cpu().numpy(), label='Validation Accuracy')
+#plt.xlabel("Epochs")
+#plt.ylabel("Accuracy")
+#plt.legend()
+#plt.savefig(os.path.join(output_dir, 'acc_plot.png'))
+
