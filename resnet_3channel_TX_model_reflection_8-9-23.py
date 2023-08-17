@@ -121,7 +121,7 @@ model = model.to(device)
 
 # Define the loss function and the optimizer
 # For binary classification
-weights = [0.7, 0.3]  # class 0 is "Passes" and class 1 is "Fails"
+weights = [0.76, 0.24]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 

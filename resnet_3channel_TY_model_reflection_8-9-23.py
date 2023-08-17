@@ -121,17 +121,17 @@ model = model.to(device)
 
 # Define the loss function and the optimizer
 # For binary classification
-weights = [0.7, 0.23]  # class 0 is "Passes" and class 1 is "Fails"
+weights = [0.76, 0.24]  # class 0 is "Passes" and class 1 is "Fails"
 class_weights = torch.FloatTensor(weights).to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 # Define the loss function and the optimizer/data/wesley/2_data/train_test/TX
 #criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adagrad(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
 # Define the path to the output directory
-optimizer_name = "Adagrad"
+optimizer_name = "Adam"
 weights_str = '-'.join(str(w) for w in weights)  # convert weights to a string
 output_dir = f'/data/wesley/3_data_7_31_23/model_outputs_reflection/TY/{optimizer_name}_{weights_str}_{timestamp}'
 
