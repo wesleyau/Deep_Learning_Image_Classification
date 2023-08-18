@@ -21,8 +21,8 @@ def load_and_flatten_data(folder_path):
     return np.array(data_list)
 
 # Provide the paths to your folders
-tx_directory = '/data/wesley/NPZ_Folder/TX_Machine/Am_image'  # TX machine directory
-ty_directory = '/data/wesley/NPZ_Folder/TY_Machine/Am_image'  # TY machine directory
+tx_directory = '/data/wesley/3_data_7_31_23/npz_folder/TX/TC_image'  # TX machine directory
+ty_directory = '/data/wesley/3_data_7_31_23/npz_folder/TY/TC_image'  # TY machine directory
 
 # Load and flatten the datasets
 tx_data = load_and_flatten_data(tx_directory)

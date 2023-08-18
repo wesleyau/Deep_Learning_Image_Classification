@@ -24,5 +24,12 @@ mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Pass /data/wesley/3_data_7_31
 mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Fail /data/wesley/3_data_7_31_23/TY_reflect_dataset/Fail
 mv /data/wesley/3_data_7_31_23/TY_reflect_dataset/*Fail /data/wesley/3_data_7_31_23/TX_reflect_dataset/Fail
 
-9. use split_train_val_test.py to split dataset into train and test datasets. I downsampled the passes because there are alot of passes. So I made the ratio 3:1 pass to fails
+9. use split_train_val_test.py to split dataset into train and test datasets. 
+I downsampled the passes because there are alot of passes. So I made the ratio 4:1 pass to fails, optimally you would want to get this to 1;1
+
+Make sure there are seperate train, val, and test folders. 
+And inside each of these folders you will need to move the pass and fail crystals in their own seperate directory
+In the directory of each of these folders, create a pass and fail folders and then run these unix commands
+mv *Pass ./Pass
+mv *Fail ./Fail
 
