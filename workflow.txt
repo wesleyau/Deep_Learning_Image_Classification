@@ -33,3 +33,27 @@ In the directory of each of these folders, create a pass and fail folders and th
 mv *Pass ./Pass
 mv *Fail ./Fail
 
+10. Run these scripts models
+TX: resnet_3channel_TX_model_confidence_trainvaltest_report_8-9-23.py
+TY: resnet_3channel_TY_model_confidence_trainvaltest_report_8-9-23.py
+
+For reflection data (I have not tested these yet):
+TX: resnet_3channel_TX_model_reflection_8-9-23.py
+TY:resnet_3channel_TY_model_reflection_8-9-23.py
+
+These models have an output directory that you can find in the scripts in which all the outputs will save
+
+Some things to keep in mind when running these scripts is that there are weights that says something like this:
+weights = [0.76, 0.24]  # class 0 is "Passes" and class 1 is "Fails"
+
+I had to fiddle alot with the weights depending on what the ratio of pass to fails are in the dataset in order to find which one is best. 
+I found for the current ratio of 20% of fails in the dataset, anywhere from [0.7, 0.3] to [0.77, 0.23] works best so you will probably have to rerun the model many many times.
+
+Also depending on how the order the batches the image data when it loads the input images which is random, there can be different results. 
+So you should rerun the models alot until you find an output that performs well which will indicate the the training has batched a set of images that makes it generalizable to the data.
+
+I would just queue the model to rerun many times, multiple times for each weight as well. 
+I used the "interactive-1" notebook with jupyter network within vscode to do this: https://code.visualstudio.com/docs/python/jupyter-support-py
+
+The weights of the best model will save in the output directory.
+
